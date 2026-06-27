@@ -1,0 +1,16 @@
+services:
+  rustdesk-api:
+    build: .
+    container_name: rustdesk-api
+    ports:
+      - "21114:21114"   # REST API
+      - "21115:21115"   # NAT type test (TCP)
+      - "21116:21116"   # hbbs (TCP+UDP)
+      - "21117:21117"   # hbbr
+    volumes:
+      - ./data:/data
+    environment:
+      - RUSTDESK_API_SERVER_MODE=release
+      - RUSTDESK_API_JWT_KEY=change-me-in-production
+      - RUSTDESK_API_LOG_LEVEL=info
+    restart: unless-stopped

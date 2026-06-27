@@ -1,0 +1,39 @@
+# Binaries
+build/
+*.exe
+*.dll
+*.so
+*.dylib
+api-server
+
+# Database
+data/
+*.db
+*.db-journal
+*.db-wal
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend
+web/
+node_modules/
+dist/
+
+# logs
+*.log
+
+# env
+.env
+.env.local
+
+# Runtime session state
+.omo/
+.trellis/
+.opencode/
