@@ -10,8 +10,8 @@ import (
 // Populated via /api/heartbeat and /api/sysinfo endpoints.
 type Peer struct {
 	ID             uint           `gorm:"primaryKey" json:"id"`
-	PeerID         string         `gorm:"index;size:100" json:"peer_id"`
-	UUID           string         `gorm:"index;size:255" json:"uuid"`
+	PeerID         string         `gorm:"uniqueIndex:idx_peer_id_uuid;size:100" json:"peer_id"`
+	UUID           string         `gorm:"uniqueIndex:idx_peer_id_uuid;size:255" json:"uuid"`
 	Hostname       string         `gorm:"size:255" json:"hostname"`
 	OS             string         `gorm:"size:100" json:"os"`
 	Username       string         `gorm:"size:100" json:"username"`

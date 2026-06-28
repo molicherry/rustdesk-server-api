@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"github.com/rustdesk/rustdesk-api-server/internal/service"
 )
 
@@ -30,9 +31,10 @@ func BackendUserAuth() gin.HandlerFunc {
 
 		user, token, err := service.ValidateToken(tokenStr)
 		if err != nil {
+			logrus.WithError(err).Warn("auth validation failed")
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error":   "unauthorized",
-				"message": err.Error(),
+				"message": "unauthorized",
 			})
 			return
 		}

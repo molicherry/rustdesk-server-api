@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 )
@@ -226,8 +227,19 @@ func (h *Hub) ClientCount() int {
 var Upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-	// Allow all origins for development; restrict in production via config
+	// In release mode only allow same-origin or no-Origin requests.
+	// In debug mode allow all origins for development convenience.
 	CheckOrigin: func(r *http.Request) bool {
-		return true
+		if gin.Mode() == gin.ReleaseMode {
+			origin := r.Header.Get("Origin")
+			if origin == "" {
+				return true // same-origin requests may omit Origin
+			}
+			if origin == "http://"+r.Host || origin == "https://"+r.Host {
+				return true
+			}
+			return false
+		}
+		return true // debug mode: allow all origins
 	},
 }

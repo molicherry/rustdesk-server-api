@@ -11,7 +11,7 @@ type UserToken struct {
 	ID         uint           `gorm:"primaryKey" json:"id"`
 	UserID     uint           `gorm:"index;not null" json:"user_id"`
 	DeviceUUID string         `gorm:"size:255" json:"device_uuid"`
-	Token      string         `gorm:"index;size:64;not null" json:"token"`
+	Token      string         `gorm:"uniqueIndex;size:64;not null" json:"token"`
 	ExpiredAt  int64          `json:"expired_at"`
 	CreatedAt  time.Time      `json:"created_at"`
 	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`

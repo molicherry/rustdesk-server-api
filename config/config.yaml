@@ -8,6 +8,7 @@ database:
   path: "./data/api.db"
 
 jwt:
+  # Set via RUSTDESK_API_JWT_KEY env var. If empty, JWT functionality is disabled.
   key: ""
   expire_hours: 168  # 7 days
 

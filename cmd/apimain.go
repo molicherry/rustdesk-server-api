@@ -1,8 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/rustdesk/rustdesk-api-server/config"
 	"github.com/rustdesk/rustdesk-api-server/internal/database"
@@ -80,11 +85,44 @@ func serveCmd() *cobra.Command {
 			// Seed initial admin user if users table is empty
 			seedAdminUser()
 
-			// Create server and start
+			// Create server and start with timeouts, TLS, and graceful shutdown
 			srv := server.NewServer(cfg)
-			logrus.Infof("Server listening on %s", cfg.Server.Addr)
 
-			return srv.Run(cfg.Server.Addr)
+			httpServer := &http.Server{
+				Addr:              cfg.Server.Addr,
+				Handler:           srv,
+				ReadTimeout:       10 * time.Second,
+				WriteTimeout:      10 * time.Second,
+				IdleTimeout:       60 * time.Second,
+				ReadHeaderTimeout: 5 * time.Second,
+			}
+
+			go func() {
+				var err error
+				if cfg.Server.CertFile != "" && cfg.Server.KeyFile != "" {
+					logrus.Infof("Starting HTTPS server on %s", cfg.Server.Addr)
+					err = httpServer.ListenAndServeTLS(cfg.Server.CertFile, cfg.Server.KeyFile)
+				} else {
+					logrus.Warnf("Starting HTTP server on %s (TLS not configured)", cfg.Server.Addr)
+					err = httpServer.ListenAndServe()
+				}
+				if err != nil && err != http.ErrServerClosed {
+					logrus.Fatalf("server error: %v", err)
+				}
+			}()
+
+			quit := make(chan os.Signal, 1)
+			signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+			<-quit
+			logrus.Info("Shutting down server...")
+
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			if err := httpServer.Shutdown(ctx); err != nil {
+				logrus.Fatalf("server forced to shutdown: %v", err)
+			}
+			logrus.Info("Server exited")
+			return nil
 		},
 	}
 }
@@ -181,10 +219,6 @@ func seedAdminUser() {
 		return
 	}
 
-	logrus.Warn("============================================================")
-	logrus.Warn("  [RUSTDESK] Initial admin created!")
-	logrus.Warnf("  username: %s", user.Username)
-	logrus.Warnf("  password: %s", password)
-	logrus.Warn("  Please change this password after first login.")
-	logrus.Warn("============================================================")
+	// Print to stderr directly, not through the logging system
+	fmt.Fprintf(os.Stderr, "\n=== ADMIN ACCOUNT CREATED ===\n  Username: %s\n  Password: %s\n=== CHANGE THIS PASSWORD IMMEDIATELY ===\n\n", user.Username, password)
 }

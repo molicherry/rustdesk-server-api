@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"github.com/rustdesk/rustdesk-api-server/internal/database"
 	"github.com/rustdesk/rustdesk-api-server/internal/model"
 	"github.com/rustdesk/rustdesk-api-server/internal/service"
@@ -132,9 +133,10 @@ func CreateAddressBook(c *gin.Context) {
 	}
 
 	if err := service.CreateAddressBook(entry); err != nil {
+		logrus.WithError(err).Error("create address book entry failed")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "server_error",
-			"message": err.Error(),
+			"message": "internal server error",
 		})
 		return
 	}
@@ -193,13 +195,10 @@ func UpdateAddressBook(c *gin.Context) {
 	}
 
 	if err := service.UpdateAddressBook(req.ID, updates); err != nil {
-		status := http.StatusInternalServerError
-		if err.Error() == "address_book not found" {
-			status = http.StatusNotFound
-		}
-		c.JSON(status, gin.H{
+		logrus.WithError(err).Error("update address book entry failed")
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "server_error",
-			"message": err.Error(),
+			"message": "internal server error",
 		})
 		return
 	}

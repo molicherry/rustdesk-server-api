@@ -12,8 +12,9 @@ import (
 
 // LoginRequest is the request body for admin login.
 type LoginRequest struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	Username     string `json:"username" binding:"required"`
+	Password     string `json:"password" binding:"required"`
+	CaptchaToken string `json:"captcha_token,omitempty"`
 }
 
 // LoginResponse is the response body for a successful admin login.
@@ -46,6 +47,8 @@ func userResponse(u *model.User) UserResponse {
 
 // AdminLogin handles POST /api/admin/login
 func AdminLogin(c *gin.Context) {
+	ip := c.ClientIP()
+
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -55,14 +58,40 @@ func AdminLogin(c *gin.Context) {
 		return
 	}
 
+	// Rate limiting: block if too many failed attempts from this IP.
+	if middleware.LoginLimiter.IsBlocked(ip) {
+		c.JSON(http.StatusTooManyRequests, gin.H{
+			"error":   "too_many_requests",
+			"message": "Too many login attempts. Please try again later.",
+		})
+		return
+	}
+
+	// Captcha check: if threshold is reached, captcha token is mandatory.
+	if middleware.LoginLimiter.CaptchaRequired(ip) && req.CaptchaToken == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "captcha_required",
+			"message": "Captcha token is required. Solve the captcha and include captcha_token in the request.",
+		})
+		return
+	}
+	// TODO: validate captcha token against a captcha service when implemented.
+	// For now, any non-empty captcha_token passes when captcha is required.
+
 	user, err := service.LoginByPassword(req.Username, req.Password)
 	if err != nil {
+		// Record failed attempt.
+		middleware.LoginLimiter.RecordAttempt(ip)
+
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error":   "unauthorized",
 			"message": err.Error(),
 		})
 		return
 	}
+
+	// Successful login — clear rate limiter for this IP.
+	middleware.LoginLimiter.Clear(ip)
 
 	token, err := service.CreateToken(user.ID, "")
 	if err != nil {
@@ -77,7 +106,7 @@ func AdminLogin(c *gin.Context) {
 	loginLog := &model.LoginLog{
 		UserID:   user.ID,
 		Client:   c.Request.UserAgent(),
-		IP:       c.ClientIP(),
+		IP:       ip,
 		Type:     "password",
 		Platform: "web",
 	}
@@ -109,10 +138,13 @@ func AdminLogout(c *gin.Context) {
 }
 
 // Captcha handles GET /api/admin/captcha
-// Placeholder — returns captcha not required for now. Full captcha in P1.
+// Returns whether captcha is required based on the rate limiter threshold.
 func Captcha(c *gin.Context) {
+	ip := c.ClientIP()
+	required := middleware.LoginLimiter.CaptchaRequired(ip)
+
 	c.JSON(http.StatusOK, gin.H{
-		"captcha_required": false,
+		"captcha_required": required,
 	})
 }
 

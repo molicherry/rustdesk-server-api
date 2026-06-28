@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rustdesk/rustdesk-api-server/internal/database"
+	"github.com/rustdesk/rustdesk-api-server/internal/middleware"
 	"github.com/rustdesk/rustdesk-api-server/internal/model"
 	"github.com/rustdesk/rustdesk-api-server/internal/service"
 	"github.com/sirupsen/logrus"
@@ -503,7 +504,7 @@ func getUserIDFromContext(c *gin.Context) uint {
 	// Extend this when RustAuth middleware is fully implemented.
 
 	// Try to get from RustAuth context
-	if user, exists := c.Get("rustUser"); exists {
+	if user, exists := c.Get(middleware.ContextKeyUser); exists {
 		if u, ok := user.(*model.User); ok {
 			return u.ID
 		}

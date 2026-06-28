@@ -38,6 +38,10 @@ func GenerateToken(userID uint, key string, expireHours int) (string, error) {
 
 // ParseToken validates and parses a JWT token string.
 func ParseToken(tokenStr, key string) (*CustomClaims, error) {
+	if key == "" {
+		return nil, fmt.Errorf("jwt key must not be empty")
+	}
+
 	token, err := jwtlib.ParseWithClaims(tokenStr, &CustomClaims{}, func(t *jwtlib.Token) (any, error) {
 		if _, ok := t.Method.(*jwtlib.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])

@@ -11,6 +11,6 @@ services:
       - ./data:/data
     environment:
       - RUSTDESK_API_SERVER_MODE=release
-      - RUSTDESK_API_JWT_KEY=change-me-in-production
+      - RUSTDESK_API_JWT_KEY=${JWT_KEY:-}
       - RUSTDESK_API_LOG_LEVEL=info
     restart: unless-stopped

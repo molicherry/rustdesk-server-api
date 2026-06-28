@@ -9,8 +9,8 @@ import (
 // Tag represents a user-created label for organizing address book contacts.
 type Tag struct {
 	ID        uint           `gorm:"primaryKey" json:"id"`
-	UserID    uint           `gorm:"index;not null" json:"user_id"`
-	Name      string         `gorm:"not null;size:100" json:"name"`
+	UserID    uint           `gorm:"uniqueIndex:idx_user_tag_name;not null" json:"user_id"`
+	Name      string         `gorm:"uniqueIndex:idx_user_tag_name;not null;size:100" json:"name"`
 	Color     int64          `json:"color"` // Flutter ARGB color value
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`

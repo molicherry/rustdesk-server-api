@@ -22,8 +22,10 @@ type Config struct {
 
 // ServerConfig holds server-related configuration.
 type ServerConfig struct {
-	Addr string `mapstructure:"addr"`
-	Mode string `mapstructure:"mode"`
+	Addr     string `mapstructure:"addr"`
+	Mode     string `mapstructure:"mode"`
+	CertFile string `mapstructure:"cert_file"`
+	KeyFile  string `mapstructure:"key_file"`
 }
 
 // DatabaseConfig holds database configuration.

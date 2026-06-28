@@ -247,9 +247,27 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
-	database.DB.Where("user_id = ?", req.ID).Delete(&model.AddressBook{})
-	database.DB.Where("user_id = ?", req.ID).Delete(&model.Tag{})
-	database.DB.Where("id = ?", req.ID).Delete(&model.User{})
+	tx := database.DB.Begin()
+	if err := tx.Where("user_id = ?", req.ID).Delete(&model.AddressBook{}).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "failed to delete user data"})
+		return
+	}
+	if err := tx.Where("user_id = ?", req.ID).Delete(&model.Tag{}).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "failed to delete user data"})
+		return
+	}
+	result := tx.Where("id = ?", req.ID).Delete(&model.User{})
+	if result.Error != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "failed to delete user"})
+		return
+	}
+	if err := tx.Commit().Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "failed to commit deletion"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
 }

@@ -21,6 +21,14 @@ func NewServer(cfg *config.Config) *gin.Engine {
 
 	r := gin.New()
 
+	// Initialize token lifecycle config before any tokens are created/validated.
+	service.InitTokenConfig(service.TokenConfig{
+		ExpireHours: cfg.JWT.ExpireHours,
+	})
+
+	// Initialize login rate limiter before routes are registered.
+	middleware.InitRateLimiter(cfg.App.CaptchaThreshold)
+
 	// Global middleware
 	r.Use(middleware.CORS())
 	r.Use(middleware.Logger())

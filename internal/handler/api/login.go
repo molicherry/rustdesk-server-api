@@ -5,16 +5,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rustdesk/rustdesk-api-server/internal/database"
+	"github.com/rustdesk/rustdesk-api-server/internal/middleware"
 	"github.com/rustdesk/rustdesk-api-server/internal/model"
 	"github.com/rustdesk/rustdesk-api-server/internal/service"
 )
 
 // ClientLoginRequest is the request body from the RustDesk client for /api/login.
 type ClientLoginRequest struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
-	ID       string `json:"id"`
-	UUID     string `json:"uuid"`
+	Username     string `json:"username" binding:"required"`
+	Password     string `json:"password" binding:"required"`
+	ID           string `json:"id"`
+	UUID         string `json:"uuid"`
+	CaptchaToken string `json:"captcha_token,omitempty"`
 }
 
 // ClientLoginResponse is the response for a successful client login.
@@ -28,6 +30,8 @@ type ClientLoginResponse struct {
 // RustDesk clients send {username, password, id, uuid} and expect
 // {access_token: "...", type: "access_token"} in response.
 func ClientLogin(c *gin.Context) {
+	ip := c.ClientIP()
+
 	var req ClientLoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -37,14 +41,29 @@ func ClientLogin(c *gin.Context) {
 		return
 	}
 
+	// Rate limiting: block if too many failed attempts from this IP.
+	if middleware.LoginLimiter.IsBlocked(ip) {
+		c.JSON(http.StatusTooManyRequests, gin.H{
+			"error":   "too_many_requests",
+			"message": "Too many login attempts. Please try again later.",
+		})
+		return
+	}
+
 	user, err := service.LoginByPassword(req.Username, req.Password)
 	if err != nil {
+		// Record failed attempt.
+		middleware.LoginLimiter.RecordAttempt(ip)
+
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error":   "unauthorized",
 			"message": "Invalid username or password",
 		})
 		return
 	}
+
+	// Successful login — clear rate limiter for this IP.
+	middleware.LoginLimiter.Clear(ip)
 
 	// Create a token for the client with device UUID
 	token, err := service.CreateToken(user.ID, req.UUID)
@@ -62,7 +81,7 @@ func ClientLogin(c *gin.Context) {
 		DeviceID: req.ID,
 		UUID:     req.UUID,
 		Client:   c.Request.UserAgent(),
-		IP:       c.ClientIP(),
+		IP:       ip,
 		Type:     "password",
 		Platform: "rustdesk",
 	}

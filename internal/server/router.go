@@ -20,6 +20,7 @@ func RegisterRoutes(r *gin.Engine, _ *config.Config) {
 
 	// === Client API group (/api/*) ===
 	apiGroup := r.Group("/api")
+	apiGroup.Use(middleware.BackendUserAuth())
 	{
 		// login-options supports both HEAD (TLS warmup) and GET
 		apiGroup.HEAD("/login-options", api.LoginOptions)

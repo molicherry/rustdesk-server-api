@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"github.com/rustdesk/rustdesk-api-server/internal/model"
 	"github.com/rustdesk/rustdesk-api-server/internal/service"
 )
@@ -20,9 +21,10 @@ type DeviceGroupResponse struct {
 func ListDeviceGroups(c *gin.Context) {
 	groups, err := service.ListDeviceGroups()
 	if err != nil {
+		logrus.WithError(err).Error("list device groups failed")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "server_error",
-			"message": err.Error(),
+			"message": "internal server error",
 		})
 		return
 	}
@@ -52,9 +54,10 @@ func CreateDeviceGroup(c *gin.Context) {
 
 	group, err := service.CreateDeviceGroup(req.Name)
 	if err != nil {
+		logrus.WithError(err).Error("create device group failed")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "server_error",
-			"message": err.Error(),
+			"message": "internal server error",
 		})
 		return
 	}
@@ -80,9 +83,10 @@ func UpdateDeviceGroup(c *gin.Context) {
 	}
 
 	if err := service.UpdateDeviceGroup(req.ID, req.Name); err != nil {
+		logrus.WithError(err).Error("update device group failed")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "server_error",
-			"message": err.Error(),
+			"message": "internal server error",
 		})
 		return
 	}
@@ -112,9 +116,10 @@ func DeleteDeviceGroup(c *gin.Context) {
 	}
 
 	if err := service.DeleteDeviceGroup(req.ID); err != nil {
+		logrus.WithError(err).Error("delete device group failed")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "server_error",
-			"message": err.Error(),
+			"message": "internal server error",
 		})
 		return
 	}

@@ -4,7 +4,6 @@ import (
 	cryptorand "crypto/rand"
 	"encoding/hex"
 	"fmt"
-	mathrand "math/rand/v2"
 	"time"
 
 	"github.com/rustdesk/rustdesk-api-server/internal/database"
@@ -15,13 +14,43 @@ import (
 const (
 	// TokenBytes is the number of random bytes for API tokens (32 bytes → 64 hex chars).
 	TokenBytes = 32
-	// TokenExpireHours is the default token expiry in hours (7 days).
-	TokenExpireHours = 168
+	// DefaultTokenExpireHours is the default token expiry in hours (7 days).
+	DefaultTokenExpireHours = 168
+	// DefaultMaxTokenLifetimeHours caps the absolute lifetime of a token (30 days).
+	// Auto-refresh cannot extend a token beyond this limit.
+	DefaultMaxTokenLifetimeHours = 720
+	// BcryptCost is the bcrypt cost factor used for password hashing.
+	// Cost 12 balances security and performance (~250ms per hash).
+	BcryptCost = 12
 )
+
+// TokenConfig holds configurable token settings.
+type TokenConfig struct {
+	ExpireHours        int // Token refresh window expiry in hours (default 168 = 7 days).
+	MaxLifetimeHours   int // Absolute maximum token lifetime in hours (default 720 = 30 days).
+}
+
+var (
+	// tokenExpireHours is the configured token expiry in hours. Override via InitTokenConfig.
+	tokenExpireHours = DefaultTokenExpireHours
+	// maxTokenLifetimeHours is the absolute max lifetime for a token in hours.
+	maxTokenLifetimeHours = DefaultMaxTokenLifetimeHours
+)
+
+// InitTokenConfig sets the token lifecycle parameters. Call once during server
+// bootstrap before any tokens are created or validated.
+func InitTokenConfig(cfg TokenConfig) {
+	if cfg.ExpireHours > 0 {
+		tokenExpireHours = cfg.ExpireHours
+	}
+	if cfg.MaxLifetimeHours > 0 {
+		maxTokenLifetimeHours = cfg.MaxLifetimeHours
+	}
+}
 
 // HashPassword creates a bcrypt hash of the given plaintext password.
 func HashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), BcryptCost)
 	if err != nil {
 		return "", fmt.Errorf("failed to hash password: %w", err)
 	}
@@ -43,12 +72,21 @@ func GenerateToken() (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
-// GenerateRandomPassword creates a random 8-character alphanumeric password.
+// GenerateRandomPassword creates a cryptographically random 16-character password
+// using a printable ASCII charset (lowercase, uppercase, digits, and special chars).
 func GenerateRandomPassword() string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	b := make([]byte, 8)
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
+	const pwLen = 16
+	b := make([]byte, pwLen)
+	if _, err := cryptorand.Read(b); err != nil {
+		// Fallback: on failure, use time-based entropy (extremely unlikely to happen).
+		// This is not cryptographically ideal but avoids a panic in production.
+		for i := range b {
+			b[i] = byte(time.Now().UnixNano()>>uint(i%8)) & 0xFF
+		}
+	}
 	for i := range b {
-		b[i] = charset[mathrand.IntN(len(charset))]
+		b[i] = charset[int(b[i])%len(charset)]
 	}
 	return string(b)
 }
@@ -83,7 +121,7 @@ func CreateToken(userID uint, deviceUUID string) (*model.UserToken, error) {
 		UserID:     userID,
 		DeviceUUID: deviceUUID,
 		Token:      tokenStr,
-		ExpiredAt:  time.Now().Add(time.Duration(TokenExpireHours) * time.Hour).Unix(),
+		ExpiredAt:  time.Now().Add(time.Duration(tokenExpireHours) * time.Hour).Unix(),
 	}
 
 	if err := database.DB.Create(token).Error; err != nil {
@@ -116,11 +154,20 @@ func ValidateToken(tokenStr string) (*model.User, *model.UserToken, error) {
 		return nil, nil, fmt.Errorf("account is disabled")
 	}
 
+	// Absolute lifetime check: tokens cannot live beyond maxTokenLifetimeHours
+	// regardless of auto-refresh. This prevents infinite token lifetime.
+	tokenAge := now - token.CreatedAt.Unix()
+	maxLife := int64(maxTokenLifetimeHours * 3600)
+	if tokenAge > maxLife {
+		database.DB.Delete(&token)
+		return nil, nil, fmt.Errorf("token lifetime exceeded")
+	}
+
 	// Auto-refresh: if within 1/3 of remaining lifetime, extend expiry
-	totalLife := int64(TokenExpireHours * 3600)
+	totalLife := int64(tokenExpireHours * 3600)
 	remaining := token.ExpiredAt - now
 	if remaining < totalLife/3 {
-		token.ExpiredAt = time.Now().Add(time.Duration(TokenExpireHours) * time.Hour).Unix()
+		token.ExpiredAt = time.Now().Add(time.Duration(tokenExpireHours) * time.Hour).Unix()
 		database.DB.Model(&token).Update("expired_at", token.ExpiredAt)
 	}
 

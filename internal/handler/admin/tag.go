@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"github.com/rustdesk/rustdesk-api-server/internal/model"
 	"github.com/rustdesk/rustdesk-api-server/internal/service"
 )
@@ -60,9 +61,10 @@ func ListTags(c *gin.Context) {
 	// If no user_id specified, list all tags
 	tags, total, err := service.ListTags(req.UserID, req.Page, req.PageSize)
 	if err != nil {
+		logrus.WithError(err).Error("list tags failed")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "server_error",
-			"message": err.Error(),
+			"message": "internal server error",
 		})
 		return
 	}
@@ -103,9 +105,10 @@ func CreateTag(c *gin.Context) {
 	}
 
 	if err := service.CreateTag(tag); err != nil {
+		logrus.WithError(err).Error("create tag failed")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "server_error",
-			"message": err.Error(),
+			"message": "internal server error",
 		})
 		return
 	}
@@ -158,9 +161,10 @@ func UpdateTag(c *gin.Context) {
 	}
 
 	if err := service.UpdateTag(req.ID, tag.UserID, updates); err != nil {
+		logrus.WithError(err).Error("update tag failed")
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "server_error",
-			"message": err.Error(),
+			"message": "internal server error",
 		})
 		return
 	}
