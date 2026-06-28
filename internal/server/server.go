@@ -1,6 +1,7 @@
 package server
 
 import (
+	"embed"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -12,7 +13,8 @@ import (
 )
 
 // NewServer creates and configures a new Gin engine with middleware.
-func NewServer(cfg *config.Config) *gin.Engine {
+// frontendFS is the embedded frontend filesystem (may be nil if web_client is false).
+func NewServer(cfg *config.Config, frontendFS embed.FS) *gin.Engine {
 	if cfg.Server.Mode == "debug" {
 		gin.SetMode(gin.DebugMode)
 	} else {
@@ -36,6 +38,11 @@ func NewServer(cfg *config.Config) *gin.Engine {
 
 	// Register routes (this also creates the WebSocket Hub)
 	RegisterRoutes(r, cfg)
+
+	// Serve embedded frontend (React SPA) when enabled
+	if cfg.App.WebClient {
+		ServeEmbeddedFrontend(r, frontendFS)
+	}
 
 	// Start online status tracker in background
 	go runOnlineStatusTracker()

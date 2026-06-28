@@ -13,4 +13,5 @@ services:
       - RUSTDESK_API_SERVER_MODE=release
       - RUSTDESK_API_JWT_KEY=${JWT_KEY:-}
       - RUSTDESK_API_LOG_LEVEL=info
+      - RUSTDESK_API_APP_WEB_CLIENT=true
     restart: unless-stopped

@@ -1,4 +1,13 @@
-# Stage 1: Build the Go binary
+# Stage 0: Build the React frontend
+FROM node:22-alpine AS frontend-builder
+WORKDIR /web
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
+COPY web/ ./
+ENV VITE_API_URL=""
+RUN npm run build
+
+# Stage 1: Build the Go binary (with embedded frontend)
 FROM golang:1.26-alpine AS builder
 
 RUN apk add --no-cache git ca-certificates tzdata gcc musl-dev sqlite-dev
@@ -9,8 +18,9 @@ WORKDIR /build
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy source and build a static binary
+# Copy source and frontend dist for embed
 COPY . .
+COPY --from=frontend-builder /web/dist ./web/dist
 RUN CGO_ENABLED=1 go build -ldflags="-s -w -linkmode external -extldflags '-static'" -o /api-server ./cmd/
 
 # Stage 2: Minimal runtime

@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/rustdesk/rustdesk-api-server"
 	"github.com/rustdesk/rustdesk-api-server/config"
 	"github.com/rustdesk/rustdesk-api-server/internal/database"
 	"github.com/rustdesk/rustdesk-api-server/internal/model"
@@ -86,7 +87,7 @@ func serveCmd() *cobra.Command {
 			seedAdminUser()
 
 			// Create server and start with timeouts, TLS, and graceful shutdown
-			srv := server.NewServer(cfg)
+			srv := server.NewServer(cfg, embedded.Frontend)
 
 			httpServer := &http.Server{
 				Addr:              cfg.Server.Addr,
