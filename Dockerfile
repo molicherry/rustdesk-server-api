@@ -1,7 +1,7 @@
 # Stage 1: Build the Go binary
-FROM golang:1.24-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
-RUN apk add --no-cache git ca-certificates tzdata
+RUN apk add --no-cache git ca-certificates tzdata gcc musl-dev sqlite-dev
 
 WORKDIR /build
 
@@ -11,7 +11,7 @@ RUN go mod download
 
 # Copy source and build a static binary
 COPY . .
-RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /api-server ./cmd/
+RUN CGO_ENABLED=1 go build -ldflags="-s -w -linkmode external -extldflags '-static'" -o /api-server ./cmd/
 
 # Stage 2: Minimal runtime
 FROM alpine:3.21
