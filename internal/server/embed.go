@@ -73,8 +73,15 @@ func ServeEmbeddedFrontend(r *gin.Engine, frontendFS embed.FS) {
 		}
 
 		// SPA fallback: serve index.html for client-side routing.
-		c.Request.URL.Path = "/index.html"
-		fileServer.ServeHTTP(c.Writer, c.Request)
+		// Read the file directly and set the response body rather than
+		// delegating to http.FileServer, which can trigger unwanted 301
+		// redirects when the request path does not match a real file.
+		idx, err := fs.ReadFile(subFS, "index.html")
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			return
+		}
+		c.Data(http.StatusOK, "text/html; charset=utf-8", idx)
 	})
 
 	logrus.Info("embedded frontend enabled (web_client=true)")
