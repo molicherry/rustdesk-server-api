@@ -58,13 +58,18 @@ func ServeEmbeddedFrontend(r *gin.Engine, frontendFS embed.FS) {
 			return
 		}
 
-		// If the requested path exists as a file, serve it directly.
+		// If the requested path exists as a regular file, serve it directly.
+		// Skip directories (including root "/") to avoid http.FileServer
+		// 301 redirects and fall through to the SPA fallback below.
 		trimmed := strings.TrimPrefix(path, "/")
 		f, err := fsys.Open(trimmed)
 		if err == nil {
+			info, statErr := f.Stat()
 			f.Close()
-			fileServer.ServeHTTP(c.Writer, c.Request)
-			return
+			if statErr == nil && !info.IsDir() {
+				fileServer.ServeHTTP(c.Writer, c.Request)
+				return
+			}
 		}
 
 		// SPA fallback: serve index.html for client-side routing.
