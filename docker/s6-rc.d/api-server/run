@@ -1,2 +1,4 @@
 #!/command/with-contenv sh
+exec 2>&1
+echo "[api-server] Starting api-server serve..."
 exec api-server serve
