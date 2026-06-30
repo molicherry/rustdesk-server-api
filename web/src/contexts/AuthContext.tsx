@@ -28,7 +28,7 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
-const baseURL = import.meta.env.VITE_API_URL || "http://localhost:21114";
+const baseURL = import.meta.env.VITE_API_URL ?? "";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(localStorage.getItem("api-token"));
