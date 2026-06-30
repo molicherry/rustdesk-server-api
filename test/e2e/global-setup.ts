@@ -65,7 +65,7 @@ async function pollHealth(apiUrl: string, maxRetries: number = 180): Promise<voi
 async function loginAsAdmin(apiUrl: string): Promise<{ token: string; userId: number }> {
   const { status, data } = await httpPost(
     `${apiUrl}/api/admin/login`,
-    JSON.stringify({ username: ADMIN_USERNAME, password: ADMIN_PASSWORD })
+    JSON.stringify({ username: ADMIN_USERNAME, password: ADMIN_PASSWORD, captcha_token: "bypass" })
   );
 
   if (status !== 200) {

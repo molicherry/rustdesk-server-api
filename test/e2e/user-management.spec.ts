@@ -104,6 +104,7 @@ test.describe("User Management", () => {
     const loginRes = await apiRequest("POST", "/api/admin/login", {
       username,
       password: "TestPass123!",
+      captcha_token: "bypass",
     });
     expect(loginRes.status).toBe(200);
     const loginData = loginRes.data as { token: string };

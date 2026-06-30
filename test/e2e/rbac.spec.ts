@@ -97,6 +97,7 @@ test.describe("RBAC (Role-Based Access Control)", () => {
     const loginRes = await apiRequest("POST", "/api/admin/login", {
       username,
       password: "TestPass123!",
+      captcha_token: "bypass",
     });
     expect(loginRes.status).toBe(200);
     const userToken = (loginRes.data as { token: string }).token;
@@ -128,6 +129,7 @@ test.describe("RBAC (Role-Based Access Control)", () => {
     const loginRes = await apiRequest("POST", "/api/admin/login", {
       username,
       password: "TestPass123!",
+      captcha_token: "bypass",
     });
     const userToken = (loginRes.data as { token: string }).token;
 
