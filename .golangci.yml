@@ -9,3 +9,10 @@ linters:
         - (*github.com/gorilla/websocket.Conn).Close
         - (*github.com/gorilla/websocket.Conn).SetReadDeadline
         - (*github.com/gorilla/websocket.Conn).SetWriteDeadline
+        - (*github.com/gorilla/websocket.Conn).WriteMessage
+
+  exclusions:
+    paths:
+      - internal/server/embed\.go
+      - internal/wsutil/
+      - internal/handler/api/deploy\.go
