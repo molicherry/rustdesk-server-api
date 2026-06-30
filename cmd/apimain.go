@@ -201,19 +201,72 @@ func userCmd() *cobra.Command {
 
 	addCmd.Flags().BoolVar(&isAdmin, "admin", false, "Grant admin privileges")
 	cmd.AddCommand(addCmd)
+
+	resetCmd := &cobra.Command{
+		Use:   "reset-password <username> <new-password>",
+		Short: "Reset a user's password",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			username := args[0]
+			password := args[1]
+
+			cfg, err := config.Load(cfgFile)
+			if err != nil {
+				return fmt.Errorf("failed to load config: %w", err)
+			}
+
+			logrus.SetLevel(logrus.WarnLevel)
+			if err := database.Init(cfg.Database); err != nil {
+				return fmt.Errorf("failed to init database: %w", err)
+			}
+
+			if err := database.Migrate(); err != nil {
+				return fmt.Errorf("failed to migrate database: %w", err)
+			}
+
+			if err := service.ResetPassword(username, password); err != nil {
+				return fmt.Errorf("failed to reset password: %w", err)
+			}
+
+			fmt.Printf("Password reset for user: %s\n", username)
+			return nil
+		},
+	}
+	cmd.AddCommand(resetCmd)
+
 	return cmd
 }
 
 // seedAdminUser checks if the users table is empty and auto-creates an admin
-// account with a random password. Credentials are printed to stdout.
+// account. If a user named "admin" already exists and RUSTDESK_API_ADMIN_PASSWORD
+// is set, it resets the password to that value.
 func seedAdminUser() {
+	envPassword := os.Getenv("RUSTDESK_API_ADMIN_PASSWORD")
+
+	var adminUser model.User
+	err := database.DB.Where("username = ?", "admin").First(&adminUser).Error
+
+	if err == nil && envPassword != "" {
+		// Admin exists and env var is set → reset password
+		if err := service.ResetPassword("admin", envPassword); err != nil {
+			logrus.Errorf("Failed to reset admin password: %v", err)
+		} else {
+			logrus.Info("Admin password reset via RUSTDESK_API_ADMIN_PASSWORD")
+		}
+		return
+	}
+
+	// If users table has entries, skip seeding
 	var count int64
 	database.DB.Model(&model.User{}).Count(&count)
 	if count > 0 {
 		return
 	}
 
-	password := service.GenerateRandomPassword()
+	password := envPassword
+	if password == "" {
+		password = service.GenerateRandomPassword()
+	}
 	user, err := service.CreateUser("admin", password, true)
 	if err != nil {
 		logrus.Errorf("Failed to seed admin user: %v", err)

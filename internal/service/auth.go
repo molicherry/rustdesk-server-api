@@ -219,6 +219,21 @@ func CreateUser(username, password string, isAdmin bool) (*model.User, error) {
 	return user, nil
 }
 
+// ResetPassword finds a user by username and updates their password.
+func ResetPassword(username, password string) error {
+	var user model.User
+	if err := database.DB.Where("username = ?", username).First(&user).Error; err != nil {
+		return fmt.Errorf("user %q not found", username)
+	}
+
+	hashed, err := HashPassword(password)
+	if err != nil {
+		return err
+	}
+
+	return database.DB.Model(&user).Update("password", hashed).Error
+}
+
 // FindUserByID looks up a user by primary key.
 func FindUserByID(id uint) (*model.User, error) {
 	var user model.User
