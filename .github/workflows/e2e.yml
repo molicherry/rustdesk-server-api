@@ -2,11 +2,6 @@ name: E2E Tests
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main, master]
-    paths:
-      - "test/e2e/**"
-      - ".github/workflows/e2e.yml"
 
 jobs:
   e2e:
