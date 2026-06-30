@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"github.com/rustdesk/rustdesk-api-server/internal/middleware"
 	"github.com/rustdesk/rustdesk-api-server/internal/model"
 	"github.com/rustdesk/rustdesk-api-server/internal/service"
 )
@@ -36,6 +37,7 @@ type TagListRequest struct {
 	Page     int  `form:"page"`
 	PageSize int  `form:"page_size"`
 	UserID   uint `form:"user_id"`
+	OrgID    uint `form:"org_id"`
 }
 
 // TagListResponse is the paginated list response.
@@ -58,8 +60,17 @@ func ListTags(c *gin.Context) {
 		req.PageSize = 20
 	}
 
-	// If no user_id specified, list all tags
-	tags, total, err := service.ListTags(req.UserID, req.Page, req.PageSize)
+	// Get org_id from middleware context
+	orgID, _ := c.Get(middleware.ContextKeyOrgID)
+	var oid uint
+	if orgID != nil {
+		oid = orgID.(uint)
+	}
+	if req.OrgID > 0 {
+		oid = req.OrgID
+	}
+
+	tags, total, err := service.ListTags(req.UserID, oid, req.Page, req.PageSize)
 	if err != nil {
 		logrus.WithError(err).Error("list tags failed")
 		c.JSON(http.StatusInternalServerError, gin.H{

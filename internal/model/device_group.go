@@ -9,8 +9,9 @@ import (
 // DeviceGroup organizes peers into logical groups.
 type DeviceGroup struct {
 	ID        uint           `gorm:"primaryKey" json:"id"`
-	Name      string         `gorm:"not null;size:255" json:"name"`
-	CreatedAt time.Time      `json:"created_at"`
+	Name           string         `gorm:"not null;size:255" json:"name"`
+	OrganizationID uint           `gorm:"default:0" json:"organization_id"`
+	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }

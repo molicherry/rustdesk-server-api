@@ -1,0 +1,19 @@
+{
+  "categories": "分类",
+  "personal": "个人",
+  "shared": "共享",
+  "teamGroups": "团队分组",
+  "engineering": "工程部",
+  "support": "支持部",
+  "sales": "销售部",
+  "devops": "运维部",
+  "name": "名称",
+  "deviceId": "设备 ID",
+  "alias": "别名",
+  "group": "分组",
+  "syncStatus": "同步状态",
+  "lastSync": "最近同步",
+  "actions": "操作",
+  "loading": "加载中...",
+  "noEntries": "未找到条目"
+}

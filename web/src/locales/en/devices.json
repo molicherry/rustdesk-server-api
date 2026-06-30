@@ -1,0 +1,23 @@
+{
+  "groups": "Groups",
+  "allDevices": "All Devices",
+  "hqOffice": "HQ Office",
+  "remoteUsers": "Remote Users",
+  "serverRoom": "Server Room",
+  "allOS": "All OS",
+  "windows": "Windows",
+  "macos": "macOS",
+  "linux": "Linux",
+  "allStatus": "All Status",
+  "online": "online",
+  "offline": "offline",
+  "searchDevices": "Search devices...",
+  "batchAction": "Batch Action",
+  "nameId": "Name / ID",
+  "os": "OS",
+  "version": "Version",
+  "status": "Status",
+  "lastSeen": "Last Seen",
+  "loading": "Loading...",
+  "noDevices": "No devices found"
+}

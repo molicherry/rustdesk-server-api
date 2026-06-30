@@ -1,0 +1,20 @@
+{
+  "title": "Settings",
+  "authentication": "Authentication",
+  "enable2FA": "Enable 2FA",
+  "requireEmailVerification": "Require Email Verification",
+  "jwtExpiryHours": "JWT Expiry (hours)",
+  "securityPolicies": "Security Policies",
+  "passwordMinLength": "Password Minimum Length",
+  "sessionTimeout": "Session Timeout (minutes)",
+  "ldapDirectory": "LDAP / Directory",
+  "ldapServerUrl": "LDAP Server URL",
+  "bindDn": "Bind DN",
+  "organizations": "Organizations",
+  "defaultOrgName": "Default Organization Name",
+  "localization": "Localization",
+  "defaultLanguage": "Default Language",
+  "defaultTimezone": "Default Timezone",
+  "saveChanges": "Save Changes",
+  "saved": "Saved"
+}

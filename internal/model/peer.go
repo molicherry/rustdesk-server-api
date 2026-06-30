@@ -24,6 +24,7 @@ type Peer struct {
 	IsOnline       bool           `gorm:"default:false" json:"is_online"`
 	Note           string         `gorm:"size:500" json:"note"`
 	DeviceGroupID  *uint          `json:"device_group_id"`
+	OrganizationID uint           `gorm:"default:0" json:"organization_id"`
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`

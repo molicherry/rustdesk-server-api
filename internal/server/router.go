@@ -13,7 +13,10 @@ import (
 )
 
 // RegisterRoutes registers all API routes on the Gin engine.
-func RegisterRoutes(r *gin.Engine, _ *config.Config) {
+func RegisterRoutes(r *gin.Engine, cfg *config.Config) {
+	// Global middleware
+	r.Use(middleware.Localization())
+
 	// Health check
 	r.GET("/api/version", versionHandler)
 	r.GET("/api/health", healthHandler)
@@ -73,9 +76,12 @@ func RegisterRoutes(r *gin.Engine, _ *config.Config) {
 	{
 		// Public endpoints (no auth)
 		adminGroup.POST("/login", admin.AdminLogin)
+		adminGroup.POST("/login/verify-totp", admin.VerifyTotpLogin)
 		adminGroup.POST("/logout", admin.AdminLogout)
 		adminGroup.GET("/captcha", admin.Captcha)
 		adminGroup.POST("/user/register", admin.UserRegister)
+		adminGroup.POST("/user/forgot-password", admin.ForgotPassword(cfg))
+		adminGroup.POST("/user/reset-password", admin.ResetPassword)
 		adminGroup.GET("/config/server", admin.ConfigServer)
 
 		// Authenticated endpoints (BackendUserAuth required)
@@ -85,51 +91,93 @@ func RegisterRoutes(r *gin.Engine, _ *config.Config) {
 			authGroup.GET("/user/current", admin.GetCurrentUser)
 			authGroup.POST("/user/changeCurPwd", admin.ChangeCurrentPassword)
 
-			// Admin privilege endpoints (BackendUserAuth + AdminPrivilege)
-			adminPrivGroup := authGroup.Group("")
-			adminPrivGroup.Use(middleware.AdminPrivilege())
+			// TOTP two-factor authentication
+			authGroup.POST("/user/tfa/enable", admin.EnableTfa)
+			authGroup.POST("/user/tfa/verify", admin.VerifyTfa)
+			authGroup.POST("/user/tfa/disable", admin.DisableTfa)
+
+			// Email verification
+			authGroup.POST("/user/send-verification", admin.SendVerification(cfg))
+			authGroup.POST("/user/verify-email", admin.VerifyEmail)
+
+			// Admin (system-level) privilege endpoints: RequireRole("admin")
+			adminRoleGroup := authGroup.Group("")
+			adminRoleGroup.Use(middleware.RequireRole("admin"))
 			{
 				// User CRUD
-				adminPrivGroup.GET("/user/list", admin.ListUsers)
-				adminPrivGroup.GET("/user/detail/:id", admin.GetUser)
-				adminPrivGroup.POST("/user/create", admin.CreateUser)
-				adminPrivGroup.POST("/user/update", admin.UpdateUser)
-				adminPrivGroup.POST("/user/delete", admin.DeleteUser)
+				adminRoleGroup.GET("/user/list", admin.ListUsers)
+				adminRoleGroup.GET("/user/detail/:id", admin.GetUser)
+				adminRoleGroup.POST("/user/create", admin.CreateUser)
+				adminRoleGroup.POST("/user/update", admin.UpdateUser)
+				adminRoleGroup.POST("/user/delete", admin.DeleteUser)
 
-				// Peer management (Phase 2)
-				adminPrivGroup.GET("/peer/list", admin.ListPeers)
-				adminPrivGroup.GET("/peer/detail/:id", admin.GetPeer)
-				adminPrivGroup.POST("/peer/delete", admin.DeletePeer)
-				adminPrivGroup.POST("/peer/batchDelete", admin.BatchDeletePeer)
-				adminPrivGroup.POST("/peer/update", admin.UpdatePeer)
+				// Organization management
+				adminRoleGroup.GET("/organizations/list", admin.ListOrganizations)
+				adminRoleGroup.POST("/organizations/create", admin.CreateOrganization)
+				adminRoleGroup.POST("/organizations/update", admin.UpdateOrganization)
+				adminRoleGroup.POST("/organizations/delete", admin.DeleteOrganization)
+			}
 
-				// Address book (Phase 3)
-				adminPrivGroup.GET("/address_book/list", admin.ListAddressBooks)
-				adminPrivGroup.GET("/address_book/detail/:id", admin.GetAddressBook)
-				adminPrivGroup.POST("/address_book/create", admin.CreateAddressBook)
-				adminPrivGroup.POST("/address_book/update", admin.UpdateAddressBook)
-				adminPrivGroup.POST("/address_book/delete", admin.DeleteAddressBook)
+			// Organization-scoped endpoints: RequireOrgRole("org_admin", "org_member")
+			orgMemberGroup := authGroup.Group("")
+			orgMemberGroup.Use(middleware.RequireOrgRole("org_admin", "org_member"))
+			{
+				// Peer management
+				orgMemberGroup.GET("/peer/list", admin.ListPeers)
+				orgMemberGroup.GET("/peer/detail/:id", admin.GetPeer)
+				orgMemberGroup.POST("/peer/delete", admin.DeletePeer)
+				orgMemberGroup.POST("/peer/batchDelete", admin.BatchDeletePeer)
+				orgMemberGroup.POST("/peer/update", admin.UpdatePeer)
 
-				// Audit logs (Phase 3)
-				adminPrivGroup.GET("/audit_conn/list", admin.ListAuditConns)
-				adminPrivGroup.GET("/audit_file/list", admin.ListAuditFiles)
+				// Address book
+				orgMemberGroup.GET("/address_book/list", admin.ListAddressBooks)
+				orgMemberGroup.GET("/address_book/detail/:id", admin.GetAddressBook)
+				orgMemberGroup.POST("/address_book/create", admin.CreateAddressBook)
+				orgMemberGroup.POST("/address_book/update", admin.UpdateAddressBook)
+				orgMemberGroup.POST("/address_book/delete", admin.DeleteAddressBook)
 
-				// Login logs (Phase 3)
-				adminPrivGroup.GET("/login_log/list", admin.ListLoginLogs)
+				// Tags
+				orgMemberGroup.GET("/tag/list", admin.ListTags)
+				orgMemberGroup.GET("/tag/detail/:id", admin.GetTag)
+				orgMemberGroup.POST("/tag/create", admin.CreateTag)
+				orgMemberGroup.POST("/tag/update", admin.UpdateTag)
+				orgMemberGroup.POST("/tag/delete", admin.DeleteTag)
+			}
 
-				// Tags (Phase 3)
-				adminPrivGroup.GET("/tag/list", admin.ListTags)
-				adminPrivGroup.GET("/tag/detail/:id", admin.GetTag)
-				adminPrivGroup.POST("/tag/create", admin.CreateTag)
-				adminPrivGroup.POST("/tag/update", admin.UpdateTag)
-				adminPrivGroup.POST("/tag/delete", admin.DeleteTag)
+			// Device groups: RequireOrgRole("org_admin")
+			orgAdminGroup := authGroup.Group("")
+			orgAdminGroup.Use(middleware.RequireOrgRole("org_admin"))
+			{
+				orgAdminGroup.GET("/device_group/list", admin.ListDeviceGroups)
+				orgAdminGroup.GET("/device_group/detail/:id", admin.GetDeviceGroup)
+				orgAdminGroup.POST("/device_group/create", admin.CreateDeviceGroup)
+				orgAdminGroup.POST("/device_group/update", admin.UpdateDeviceGroup)
+				orgAdminGroup.POST("/device_group/delete", admin.DeleteDeviceGroup)
+			}
 
-				// Device groups (Phase 3)
-				adminPrivGroup.GET("/device_group/list", admin.ListDeviceGroups)
-				adminPrivGroup.GET("/device_group/detail/:id", admin.GetDeviceGroup)
-				adminPrivGroup.POST("/device_group/create", admin.CreateDeviceGroup)
-				adminPrivGroup.POST("/device_group/update", admin.UpdateDeviceGroup)
-				adminPrivGroup.POST("/device_group/delete", admin.DeleteDeviceGroup)
+			// Organization user management: RequireOrgRole("org_admin")
+			orgUserMgmtGroup := authGroup.Group("/organizations/:orgID/users")
+			orgUserMgmtGroup.Use(middleware.RequireOrgRole("org_admin"))
+			{
+				orgUserMgmtGroup.GET("/list", admin.ListOrganizationUsers)
+				orgUserMgmtGroup.POST("/add", admin.AddUserToOrganization)
+				orgUserMgmtGroup.POST("/remove", admin.RemoveUserFromOrganization)
+				orgUserMgmtGroup.POST("/update-role", admin.UpdateUserOrgRole)
+			}
+
+			// Audit logs: RequireOrgRole("org_admin", "org_auditor")
+			orgAuditGroup := authGroup.Group("")
+			orgAuditGroup.Use(middleware.RequireOrgRole("org_admin", "org_auditor"))
+			{
+				orgAuditGroup.GET("/audit_conn/list", admin.ListAuditConns)
+				orgAuditGroup.GET("/audit_file/list", admin.ListAuditFiles)
+			}
+
+			// Login logs: RequireRole("admin", "auditor")
+			loginLogGroup := authGroup.Group("")
+			loginLogGroup.Use(middleware.RequireRole("admin", "auditor"))
+			{
+				loginLogGroup.GET("/login_log/list", admin.ListLoginLogs)
 			}
 		}
 	}

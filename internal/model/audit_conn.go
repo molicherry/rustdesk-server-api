@@ -17,8 +17,9 @@ type AuditConn struct {
 	SessionID string         `gorm:"size:255" json:"session_id"`
 	Type      int            `json:"type"`
 	UUID      string         `gorm:"size:255" json:"uuid"`
-	CloseTime int64          `json:"close_time"`
-	CreatedAt time.Time      `json:"created_at"`
+	CloseTime      int64          `json:"close_time"`
+	OrganizationID uint           `gorm:"default:0" json:"organization_id"`
+	CreatedAt      time.Time      `json:"created_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }
 

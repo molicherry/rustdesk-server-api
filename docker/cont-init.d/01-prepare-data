@@ -1,0 +1,6 @@
+#!/command/with-contenv sh
+# Ensure /data exists
+mkdir -p /data
+
+# Run database migration before server starts
+api-server sync

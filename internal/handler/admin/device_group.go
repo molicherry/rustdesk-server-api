@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"github.com/rustdesk/rustdesk-api-server/internal/middleware"
 	"github.com/rustdesk/rustdesk-api-server/internal/model"
 	"github.com/rustdesk/rustdesk-api-server/internal/service"
 )
@@ -19,7 +20,14 @@ type DeviceGroupResponse struct {
 
 // ListDeviceGroups handles GET /api/admin/device_group/list
 func ListDeviceGroups(c *gin.Context) {
-	groups, err := service.ListDeviceGroups()
+	// Get org_id from middleware context
+	orgID, _ := c.Get(middleware.ContextKeyOrgID)
+	var oid uint
+	if orgID != nil {
+		oid = orgID.(uint)
+	}
+
+	groups, err := service.ListDeviceGroups(oid)
 	if err != nil {
 		logrus.WithError(err).Error("list device groups failed")
 		c.JSON(http.StatusInternalServerError, gin.H{

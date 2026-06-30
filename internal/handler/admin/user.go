@@ -39,6 +39,7 @@ func ListUsers(c *gin.Context) {
 		req.PageSize = 20
 	}
 
+	// userResponse now includes Role — update mapping to use the function
 	query := database.DB.Model(&model.User{})
 
 	// Search by username or email
@@ -95,6 +96,7 @@ type CreateUserRequest struct {
 	Password string `json:"password" binding:"required"`
 	Email    string `json:"email"`
 	IsAdmin  bool   `json:"is_admin"`
+	Role     string `json:"role"`
 	Nickname string `json:"nickname"`
 }
 
@@ -126,6 +128,16 @@ func CreateUser(c *gin.Context) {
 	if req.Nickname != "" {
 		updates["nickname"] = req.Nickname
 	}
+	if req.Role != "" {
+		updates["role"] = req.Role
+	} else {
+		// Default role based on is_admin
+		if req.IsAdmin {
+			updates["role"] = "admin"
+		} else {
+			updates["role"] = "user"
+		}
+	}
 	if len(updates) > 0 {
 		database.DB.Model(user).Updates(updates)
 		// Re-fetch to get updated fields
@@ -141,6 +153,7 @@ type UpdateUserRequest struct {
 	Email    string `json:"email"`
 	Nickname string `json:"nickname"`
 	IsAdmin  *bool  `json:"is_admin"`
+	Role     string `json:"role"`
 	Status   *int   `json:"status"`
 }
 
@@ -186,6 +199,9 @@ func UpdateUser(c *gin.Context) {
 	}
 	if req.IsAdmin != nil {
 		updates["is_admin"] = *req.IsAdmin
+	}
+	if req.Role != "" {
+		updates["role"] = req.Role
 	}
 	if req.Status != nil {
 		updates["status"] = *req.Status

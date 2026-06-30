@@ -1,0 +1,16 @@
+.git/
+.github/
+node_modules/
+data/
+web/dist/
+*.db
+*.log
+build/
+.trellis/
+docs/
+test/
+.vscode/
+.codex/
+.opencode/
+.env
+.env.*

@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/rustdesk/rustdesk-api-server/internal/database"
+	"github.com/rustdesk/rustdesk-api-server/internal/middleware"
 	"github.com/rustdesk/rustdesk-api-server/internal/model"
 	"github.com/rustdesk/rustdesk-api-server/internal/service"
 )
@@ -48,6 +49,7 @@ type AddressBookListRequest struct {
 	PageSize int    `form:"page_size"`
 	Search   string `form:"search"`
 	UserID   uint   `form:"user_id"`
+	OrgID    uint   `form:"org_id"`
 }
 
 // AddressBookListResponse is the paginated list response.
@@ -70,10 +72,23 @@ func ListAddressBooks(c *gin.Context) {
 		req.PageSize = 20
 	}
 
+	// Get org_id from middleware context
+	orgID, _ := c.Get(middleware.ContextKeyOrgID)
+	var oid uint
+	if orgID != nil {
+		oid = orgID.(uint)
+	}
+	if req.OrgID > 0 {
+		oid = req.OrgID
+	}
+
 	query := database.DB.Model(&model.AddressBook{})
 
 	if req.UserID > 0 {
 		query = query.Where("user_id = ?", req.UserID)
+	}
+	if oid > 0 {
+		query = query.Where("organization_id = ?", oid)
 	}
 	if req.Search != "" {
 		s := "%" + req.Search + "%"

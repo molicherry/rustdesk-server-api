@@ -1,4 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+import { Navigate } from "react-router-dom";
 
 interface User {
   username: string;
@@ -31,6 +33,7 @@ export function useAuth() {
 const baseURL = import.meta.env.VITE_API_URL ?? "";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation("login");
   const [token, setToken] = useState<string | null>(localStorage.getItem("api-token"));
   const [user, setUser] = useState<User | null>(() => {
     const raw = localStorage.getItem("user");
@@ -52,14 +55,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      throw new Error(body.message || "Login failed");
+      throw new Error(body.message || t("loginFailed"));
     }
     const data = await res.json();
-    const t = data.token || data.access_token || data.accessToken || "";
+    const tok = data.token || data.access_token || data.accessToken || "";
     const u: User = data.user || { username };
-    setToken(t);
+    setToken(tok);
     setUser(u);
-    localStorage.setItem("api-token", t);
+    localStorage.setItem("api-token", tok);
     localStorage.setItem("user", JSON.stringify(u));
   };
 
@@ -85,11 +88,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-import { Navigate } from "react-router-dom";
-
 export function ProtectedRoute({ children }: { children: ReactNode }) {
+  const { t } = useTranslation("common");
   const { isAuthenticated, loading } = useAuth();
-  if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  if (loading) return <div className="flex h-screen items-center justify-center">{t("loading")}</div>;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }

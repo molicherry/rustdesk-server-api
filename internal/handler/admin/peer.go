@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rustdesk/rustdesk-api-server/internal/database"
+	"github.com/rustdesk/rustdesk-api-server/internal/middleware"
 	"github.com/rustdesk/rustdesk-api-server/internal/model"
 	"github.com/rustdesk/rustdesk-api-server/internal/service"
 )
@@ -55,6 +56,7 @@ type PeerListRequest struct {
 	Status   string `form:"status"` // "online", "offline", "all"
 	OS       string `form:"os"`
 	Search   string `form:"search"` // search in peer_id, hostname, alias
+	OrgID    uint   `form:"org_id"`
 }
 
 // PeerListResponse is the response body for the peer list endpoint.
@@ -78,33 +80,25 @@ func ListPeers(c *gin.Context) {
 		req.PageSize = 20
 	}
 
-	query := database.DB.Model(&model.Peer{})
-
-	// Filter by online status
-	switch req.Status {
-	case "online":
-		query = query.Where("is_online = ?", true)
-	case "offline":
-		query = query.Where("is_online = ?", false)
+	// Get org_id from middleware context (set by RequireOrgRole)
+	orgID, _ := c.Get(middleware.ContextKeyOrgID)
+	var oid uint
+	if orgID != nil {
+		oid = orgID.(uint)
+	}
+	// Override with query param if provided (admin global view can specify)
+	if req.OrgID > 0 {
+		oid = req.OrgID
 	}
 
-	// Filter by OS
-	if req.OS != "" {
-		query = query.Where("os = ?", req.OS)
+	peers, total, err := service.ListPeers(oid, req.Page, req.PageSize, req.Status, req.OS, req.Search)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "server_error",
+			"message": "internal server error",
+		})
+		return
 	}
-
-	// Search by peer_id, hostname, or alias
-	if req.Search != "" {
-		search := "%" + req.Search + "%"
-		query = query.Where("peer_id LIKE ? OR hostname LIKE ? OR alias LIKE ?", search, search, search)
-	}
-
-	var total int64
-	query.Count(&total)
-
-	var peers []model.Peer
-	offset := (req.Page - 1) * req.PageSize
-	query.Order("last_online_time DESC").Offset(offset).Limit(req.PageSize).Find(&peers)
 
 	data := make([]PeerResponse, len(peers))
 	for i, p := range peers {

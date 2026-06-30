@@ -1,0 +1,20 @@
+{
+  "title": "系统设置",
+  "authentication": "身份认证",
+  "enable2FA": "启用双因素认证",
+  "requireEmailVerification": "要求邮箱验证",
+  "jwtExpiryHours": "JWT 过期时间（小时）",
+  "securityPolicies": "安全策略",
+  "passwordMinLength": "密码最小长度",
+  "sessionTimeout": "会话超时（分钟）",
+  "ldapDirectory": "LDAP / 目录服务",
+  "ldapServerUrl": "LDAP 服务器地址",
+  "bindDn": "绑定 DN",
+  "organizations": "组织架构",
+  "defaultOrgName": "默认组织名称",
+  "localization": "本地化",
+  "defaultLanguage": "默认语言",
+  "defaultTimezone": "默认时区",
+  "saveChanges": "保存更改",
+  "saved": "已保存"
+}

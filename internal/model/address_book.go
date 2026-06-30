@@ -17,6 +17,7 @@ type AddressBook struct {
 	Platform         string         `gorm:"size:50" json:"platform"`
 	Tags             string         `gorm:"type:text" json:"tags"` // JSON array string
 	ForceAlwaysRelay bool           `gorm:"default:false" json:"force_always_relay"`
+	OrganizationID   uint           `gorm:"default:0" json:"organization_id"`
 	CreatedAt        time.Time      `json:"created_at"`
 	UpdatedAt        time.Time      `json:"updated_at"`
 	DeletedAt        gorm.DeletedAt `gorm:"index" json:"-"`

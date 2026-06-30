@@ -1,0 +1,8 @@
+{
+  "title": "RustDesk 管理台",
+  "username": "用户名",
+  "password": "密码",
+  "signIn": "登录",
+  "signingIn": "登录中...",
+  "loginFailed": "登录失败"
+}

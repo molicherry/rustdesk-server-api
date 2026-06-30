@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search, MoreHorizontal, Filter } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 
 interface Peer {
@@ -11,22 +12,23 @@ interface Peer {
   last_seen: string;
 }
 
-const groups = ["All Devices", "HQ Office", "Remote Users", "Server Room"];
-
 function osIcon(os: string) {
-  if (/windows/i.test(os)) return "🪟";
-  if (/mac|darwin/i.test(os)) return "🍎";
-  if (/linux/i.test(os)) return "🐧";
-  return "💻";
+  if (/windows/i.test(os)) return "\u{1FA9F}";
+  if (/mac|darwin/i.test(os)) return "\u{1F34E}";
+  if (/linux/i.test(os)) return "\u{1F427}";
+  return "\u{1F4BB}";
 }
 
 export default function DevicesPage() {
+  const { t } = useTranslation("devices");
   const [peers, setPeers] = useState<Peer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedGroup, setSelectedGroup] = useState("All Devices");
-  const [osFilter, setOsFilter] = useState("All");
-  const [statusFilter, setStatusFilter] = useState("All");
+  const [selectedGroup, setSelectedGroup] = useState(t("allDevices"));
+  const [osFilter, setOsFilter] = useState(t("allOS"));
+  const [statusFilter, setStatusFilter] = useState("allStatus");
   const [search, setSearch] = useState("");
+
+  const groups = [t("allDevices"), t("hqOffice"), t("remoteUsers"), t("serverRoom")];
 
   useEffect(() => {
     let mounted = true;
@@ -39,8 +41,8 @@ export default function DevicesPage() {
 
   const filtered = useMemo(() => {
     return peers.filter((p) => {
-      if (osFilter !== "All" && !p.os.toLowerCase().includes(osFilter.toLowerCase())) return false;
-      if (statusFilter !== "All" && p.status !== statusFilter) return false;
+      if (osFilter !== t("allOS") && !p.os.toLowerCase().includes(osFilter.toLowerCase())) return false;
+      if (statusFilter !== "allStatus" && p.status !== statusFilter) return false;
       if (search) {
         const q = search.toLowerCase();
         return (
@@ -51,13 +53,13 @@ export default function DevicesPage() {
       }
       return true;
     });
-  }, [peers, osFilter, statusFilter, search]);
+  }, [peers, osFilter, statusFilter, search, t]);
 
   return (
     <div className="flex h-full">
       {/* Left group tree */}
       <aside className="w-56 bg-white border-r border-slate-200 p-4">
-        <div className="text-sm font-semibold text-slate-700 mb-3">Groups</div>
+        <div className="text-sm font-semibold text-slate-700 mb-3">{t("groups")}</div>
         <ul className="space-y-1">
           {groups.map((g) => (
             <li key={g}>
@@ -86,10 +88,10 @@ export default function DevicesPage() {
               value={osFilter}
               onChange={(e) => setOsFilter(e.target.value)}
             >
-              <option>All OS</option>
-              <option>Windows</option>
-              <option>macOS</option>
-              <option>Linux</option>
+              <option>{t("allOS")}</option>
+              <option>{t("windows")}</option>
+              <option>{t("macos")}</option>
+              <option>{t("linux")}</option>
             </select>
           </div>
           <div className="flex items-center gap-2 bg-white border rounded-md px-3 py-2" style={{ borderColor: "#E2E8F0" }}>
@@ -99,16 +101,16 @@ export default function DevicesPage() {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option>All Status</option>
-              <option>online</option>
-              <option>offline</option>
+              <option value="allStatus">{t("allStatus")}</option>
+              <option value="online">{t("online")}</option>
+              <option value="offline">{t("offline")}</option>
             </select>
           </div>
           <div className="flex items-center gap-2 bg-white border rounded-md px-3 py-2 flex-1 min-w-[200px]" style={{ borderColor: "#E2E8F0" }}>
             <Search size={14} className="text-slate-400" />
             <input
               type="text"
-              placeholder="Search devices..."
+              placeholder={t("searchDevices")}
               className="text-sm bg-transparent outline-none w-full text-slate-700"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -116,7 +118,7 @@ export default function DevicesPage() {
           </div>
           <div className="flex gap-2">
             <button className="text-sm px-3 py-2 rounded-md border bg-white text-slate-700 hover:bg-slate-50" style={{ borderColor: "#E2E8F0" }}>
-              Batch Action
+              {t("batchAction")}
             </button>
           </div>
         </div>
@@ -126,19 +128,19 @@ export default function DevicesPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-slate-500" style={{ borderBottom: "1px solid #E2E8F0" }}>
-                <th className="px-4 py-3 font-medium">Name / ID</th>
-                <th className="px-4 py-3 font-medium">OS</th>
-                <th className="px-4 py-3 font-medium">Version</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Last Seen</th>
+                <th className="px-4 py-3 font-medium">{t("nameId")}</th>
+                <th className="px-4 py-3 font-medium">{t("os")}</th>
+                <th className="px-4 py-3 font-medium">{t("version")}</th>
+                <th className="px-4 py-3 font-medium">{t("status")}</th>
+                <th className="px-4 py-3 font-medium">{t("lastSeen")}</th>
                 <th className="px-4 py-3 font-medium w-10"></th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">Loading...</td></tr>
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">{t("loading")}</td></tr>
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">No devices found</td></tr>
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">{t("noDevices")}</td></tr>
               ) : (
                 filtered.map((p) => (
                   <tr key={p.id} className="hover:bg-slate-50" style={{ borderBottom: "1px solid #E2E8F0" }}>

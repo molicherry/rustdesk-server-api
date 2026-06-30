@@ -1,0 +1,23 @@
+{
+  "groups": "分组",
+  "allDevices": "全部设备",
+  "hqOffice": "总部办公",
+  "remoteUsers": "远程用户",
+  "serverRoom": "服务器机房",
+  "allOS": "全部系统",
+  "windows": "Windows",
+  "macos": "macOS",
+  "linux": "Linux",
+  "allStatus": "全部状态",
+  "online": "在线",
+  "offline": "离线",
+  "searchDevices": "搜索设备...",
+  "batchAction": "批量操作",
+  "nameId": "名称 / ID",
+  "os": "操作系统",
+  "version": "版本",
+  "status": "状态",
+  "lastSeen": "最近在线",
+  "loading": "加载中...",
+  "noDevices": "未找到设备"
+}

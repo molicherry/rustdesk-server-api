@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rustdesk/rustdesk-api-server/internal/database"
+	"github.com/rustdesk/rustdesk-api-server/internal/middleware"
 	"github.com/rustdesk/rustdesk-api-server/internal/model"
 )
 
@@ -15,6 +16,7 @@ type AuditConnListRequest struct {
 	PeerID    string `form:"peer_id"`
 	StartTime int64  `form:"start_time"`
 	EndTime   int64  `form:"end_time"`
+	OrgID     uint   `form:"org_id"`
 }
 
 // AuditConnListResponse is the paginated list response for connection audit logs.
@@ -37,8 +39,21 @@ func ListAuditConns(c *gin.Context) {
 		req.PageSize = 20
 	}
 
+	// Get org_id from middleware context
+	orgID, _ := c.Get(middleware.ContextKeyOrgID)
+	var oid uint
+	if orgID != nil {
+		oid = orgID.(uint)
+	}
+	if req.OrgID > 0 {
+		oid = req.OrgID
+	}
+
 	query := database.DB.Model(&model.AuditConn{})
 
+	if oid > 0 {
+		query = query.Where("organization_id = ?", oid)
+	}
 	if req.PeerID != "" {
 		query = query.Where("peer_id = ? OR from_peer = ?", req.PeerID, req.PeerID)
 	}
@@ -95,6 +110,7 @@ type AuditFileListRequest struct {
 	PeerID    string `form:"peer_id"`
 	StartTime int64  `form:"start_time"`
 	EndTime   int64  `form:"end_time"`
+	OrgID     uint   `form:"org_id"`
 }
 
 // AuditFileListResponse is the paginated list response for file transfer audit logs.
@@ -117,8 +133,21 @@ func ListAuditFiles(c *gin.Context) {
 		req.PageSize = 20
 	}
 
+	// Get org_id from middleware context
+	orgID, _ := c.Get(middleware.ContextKeyOrgID)
+	var oid uint
+	if orgID != nil {
+		oid = orgID.(uint)
+	}
+	if req.OrgID > 0 {
+		oid = req.OrgID
+	}
+
 	query := database.DB.Model(&model.AuditFile{})
 
+	if oid > 0 {
+		query = query.Where("organization_id = ?", oid)
+	}
 	if req.PeerID != "" {
 		query = query.Where("peer_id = ? OR from_peer = ?", req.PeerID, req.PeerID)
 	}
@@ -171,6 +200,7 @@ type LoginLogListRequest struct {
 	Page     int  `form:"page"`
 	PageSize int  `form:"page_size"`
 	UserID   uint `form:"user_id"`
+	OrgID    uint `form:"org_id"`
 }
 
 // LoginLogListResponse is the paginated list response for login logs.
@@ -193,8 +223,21 @@ func ListLoginLogs(c *gin.Context) {
 		req.PageSize = 20
 	}
 
+	// Get org_id from middleware context
+	orgID, _ := c.Get(middleware.ContextKeyOrgID)
+	var oid uint
+	if orgID != nil {
+		oid = orgID.(uint)
+	}
+	if req.OrgID > 0 {
+		oid = req.OrgID
+	}
+
 	query := database.DB.Model(&model.LoginLog{})
 
+	if oid > 0 {
+		query = query.Where("organization_id = ?", oid)
+	}
 	if req.UserID > 0 {
 		query = query.Where("user_id = ?", req.UserID)
 	}

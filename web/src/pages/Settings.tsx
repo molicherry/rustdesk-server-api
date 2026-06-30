@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Save } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -47,6 +48,7 @@ function InputRow({ label, value, onChange, type = "text" }: { label: string; va
 }
 
 export default function SettingsPage() {
+  const { t } = useTranslation("settings");
   const [twoFA, setTwoFA] = useState(false);
   const [emailVerify, setEmailVerify] = useState(false);
   const [jwtExpiry, setJwtExpiry] = useState("24");
@@ -61,32 +63,32 @@ export default function SettingsPage() {
   return (
     <div className="p-6 max-w-3xl">
       <h2 className="text-lg font-semibold text-slate-800 mb-4" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
-        Settings
+        {t("title")}
       </h2>
 
-      <Card title="Authentication">
-        <Toggle label="Enable 2FA" checked={twoFA} onChange={setTwoFA} />
-        <Toggle label="Require Email Verification" checked={emailVerify} onChange={setEmailVerify} />
-        <InputRow label="JWT Expiry (hours)" value={jwtExpiry} onChange={setJwtExpiry} type="number" />
+      <Card title={t("authentication")}>
+        <Toggle label={t("enable2FA")} checked={twoFA} onChange={setTwoFA} />
+        <Toggle label={t("requireEmailVerification")} checked={emailVerify} onChange={setEmailVerify} />
+        <InputRow label={t("jwtExpiryHours")} value={jwtExpiry} onChange={setJwtExpiry} type="number" />
       </Card>
 
-      <Card title="Security Policies">
-        <InputRow label="Password Minimum Length" value="8" onChange={() => {}} />
-        <InputRow label="Session Timeout (minutes)" value="30" onChange={() => {}} />
+      <Card title={t("securityPolicies")}>
+        <InputRow label={t("passwordMinLength")} value="8" onChange={() => {}} />
+        <InputRow label={t("sessionTimeout")} value="30" onChange={() => {}} />
       </Card>
 
-      <Card title="LDAP / Directory">
-        <InputRow label="LDAP Server URL" value={ldapUrl} onChange={setLdapUrl} />
-        <InputRow label="Bind DN" value="" onChange={() => {}} />
+      <Card title={t("ldapDirectory")}>
+        <InputRow label={t("ldapServerUrl")} value={ldapUrl} onChange={setLdapUrl} />
+        <InputRow label={t("bindDn")} value="" onChange={() => {}} />
       </Card>
 
-      <Card title="Organizations">
-        <InputRow label="Default Organization Name" value="Default" onChange={() => {}} />
+      <Card title={t("organizations")}>
+        <InputRow label={t("defaultOrgName")} value="Default" onChange={() => {}} />
       </Card>
 
-      <Card title="Localization">
-        <InputRow label="Default Language" value="en" onChange={() => {}} />
-        <InputRow label="Default Timezone" value="UTC" onChange={() => {}} />
+      <Card title={t("localization")}>
+        <InputRow label={t("defaultLanguage")} value="en" onChange={() => {}} />
+        <InputRow label={t("defaultTimezone")} value="UTC" onChange={() => {}} />
       </Card>
 
       <div className="flex items-center gap-3">
@@ -96,9 +98,9 @@ export default function SettingsPage() {
           style={{ backgroundColor: "#E95B24" }}
         >
           <Save size={16} />
-          Save Changes
+          {t("saveChanges")}
         </button>
-        {saved && <span className="text-sm text-green-600">Saved</span>}
+        {saved && <span className="text-sm text-green-600">{t("saved")}</span>}
       </div>
     </div>
   );

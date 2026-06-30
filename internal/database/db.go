@@ -41,6 +41,11 @@ func Migrate() error {
 		&model.AuditConn{},
 		&model.AuditFile{},
 		&model.LoginLog{},
+		&model.TfaSetupToken{},
+		&model.EmailVerification{},
+		&model.PasswordReset{},
+		&model.Organization{},
+		&model.UserOrganization{},
 	)
 }
 

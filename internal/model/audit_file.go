@@ -16,8 +16,9 @@ type AuditFile struct {
 	Info      string         `gorm:"type:text" json:"info"`
 	Type      int            `json:"type"`
 	UUID      string         `gorm:"size:255" json:"uuid"`
-	FromName  string         `gorm:"size:255" json:"from_name"`
-	CreatedAt time.Time      `json:"created_at"`
+	FromName       string         `gorm:"size:255" json:"from_name"`
+	OrganizationID uint           `gorm:"default:0" json:"organization_id"`
+	CreatedAt      time.Time      `json:"created_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }
 

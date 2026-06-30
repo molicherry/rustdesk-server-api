@@ -14,5 +14,11 @@ services:
       - RUSTDESK_API_JWT_KEY=${JWT_KEY:-}
       - RUSTDESK_API_LOG_LEVEL=info
       - RUSTDESK_API_APP_WEB_CLIENT=true
-      - RUSTDESK_API_ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme2026}
+      # Set ADMIN_PASSWORD env var before first run. Required for initial admin creation.
+      - RUSTDESK_API_ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:21114/api/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
     restart: unless-stopped

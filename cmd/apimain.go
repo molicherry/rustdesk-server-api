@@ -263,10 +263,10 @@ func seedAdminUser() {
 		return
 	}
 
-	password := envPassword
-	if password == "" {
-		password = service.GenerateRandomPassword()
+	if envPassword == "" {
+		logrus.Fatal("RUSTDESK_API_ADMIN_PASSWORD is required for initial admin creation. Set it via environment variable.")
 	}
+	password := envPassword
 	user, err := service.CreateUser("admin", password, true)
 	if err != nil {
 		logrus.Errorf("Failed to seed admin user: %v", err)

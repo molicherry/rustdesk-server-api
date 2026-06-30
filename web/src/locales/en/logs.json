@@ -1,0 +1,19 @@
+{
+  "remoteSessions": "Remote Sessions",
+  "fileTransfers": "File Transfers",
+  "to": "to",
+  "exportCSV": "Export CSV",
+  "connId": "Conn ID",
+  "peer": "Peer",
+  "platform": "Platform",
+  "user": "User",
+  "action": "Action",
+  "ip": "IP",
+  "created": "Created",
+  "path": "Path",
+  "direction": "Direction",
+  "size": "Size",
+  "loading": "Loading...",
+  "noSessionLogs": "No session logs",
+  "noFileTransferLogs": "No file transfer logs"
+}

@@ -1,0 +1,114 @@
+name: E2E Tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths:
+      - "test/e2e/**"
+      - "cmd/**"
+      - "internal/**"
+      - "web/src/**"
+      - "web/package*.json"
+      - "web/vite.config.ts"
+      - "web/tsconfig*.json"
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/e2e.yml"
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "test/e2e/**"
+      - "cmd/**"
+      - "internal/**"
+      - "web/src/**"
+      - "web/package*.json"
+      - "web/vite.config.ts"
+      - "web/tsconfig*.json"
+      - "go.mod"
+      - "go.sum"
+
+jobs:
+  e2e:
+    name: Playwright E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      - name: Install CGO dependencies
+        run: sudo apt-get update && sudo apt-get install -y gcc libc6-dev
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Cache npm (frontend)
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('web/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('test/e2e/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Build frontend
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Download Go dependencies
+        run: go mod download
+
+      - name: Install E2E dependencies
+        working-directory: test/e2e
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: test/e2e
+        run: npx playwright install chromium --with-deps
+
+      - name: Run E2E tests
+        working-directory: test/e2e
+        run: npx playwright test --reporter=html
+        env:
+          CI: "true"
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: test/e2e/playwright-report/
+          retention-days: 30
+
+      - name: Upload screenshots (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-screenshots
+          path: test/e2e/test-results/
+          retention-days: 14

@@ -23,12 +23,27 @@ COPY . .
 COPY --from=frontend-builder /web/dist ./web/dist
 RUN CGO_ENABLED=1 go build -ldflags="-s -w -linkmode external -extldflags '-static'" -o /api-server ./cmd/
 
-# Stage 2: Minimal runtime
+# Stage 2: S6-overlay runtime
 FROM alpine:3.21
 
-RUN apk add --no-cache ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata curl
 
+# Install S6-overlay v3
+ARG S6_OVERLAY_VERSION=3.2.0.2
+ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz /tmp
+ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-x86_64.tar.xz /tmp
+RUN tar -C / -Jxpf /tmp/s6-overlay-noarch.tar.xz && \
+    tar -C / -Jxpf /tmp/s6-overlay-x86_64.tar.xz && \
+    rm /tmp/s6-overlay-*.tar.xz
+
+# S6 service definitions
+COPY docker/s6-rc.d/ /etc/s6-overlay/s6-rc.d/
+
+# Copy binary from builder
 COPY --from=builder /api-server /usr/local/bin/api-server
+
+# Cont-init initialization scripts
+COPY docker/cont-init.d/ /etc/cont-init.d/
 
 RUN mkdir -p /data
 
@@ -43,5 +58,7 @@ EXPOSE 21117
 
 VOLUME ["/data"]
 
-ENTRYPOINT ["api-server"]
-CMD ["serve"]
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
+  CMD curl -f http://localhost:21114/api/health || exit 1
+
+ENTRYPOINT ["/init"]

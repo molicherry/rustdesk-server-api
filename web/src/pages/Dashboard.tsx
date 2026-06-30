@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Monitor, Users, Zap, ShieldAlert } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 
 interface StatCardProps {
@@ -28,6 +29,7 @@ function StatCard({ icon: Icon, label, value, trend, trendUp }: StatCardProps) {
 }
 
 export default function DashboardPage() {
+  const { t } = useTranslation("dashboard");
   const [onlineDevices, setOnlineDevices] = useState(0);
   const [connections, setConnections] = useState(0);
   const [users, setUsers] = useState(0);
@@ -38,12 +40,12 @@ export default function DashboardPage() {
     let mounted = true;
     async function load() {
       try {
-        const peers: any[] = await api.get("/api/admin/peer/list");
+        const peers: unknown[] = await api.get("/api/admin/peer/list");
         if (!mounted) return;
-        setOnlineDevices(peers.length);
-        setConnections(0); // backend does not expose yet
-        setUsers(0);     // backend does not expose yet
-        setAlerts(0);    // backend does not expose yet
+        setOnlineDevices((peers as unknown[]).length);
+        setConnections(0);
+        setUsers(0);
+        setAlerts(0);
       } catch {
         // ignore
       } finally {
@@ -69,13 +71,13 @@ export default function DashboardPage() {
   return (
     <div className="p-6">
       <h2 className="text-lg font-semibold text-slate-800 mb-4" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
-        Dashboard
+        {t("title")}
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={Monitor} label="Online Devices" value={onlineDevices} trend="-" trendUp={false} />
-        <StatCard icon={Zap} label="Active Connections" value={connections} trend="-" trendUp={false} />
-        <StatCard icon={Users} label="Total Users" value={users} trend="-" trendUp={false} />
-        <StatCard icon={ShieldAlert} label="Security Alerts" value={alerts} trend="-" trendUp={false} />
+        <StatCard icon={Monitor} label={t("onlineDevices")} value={onlineDevices} trend="-" trendUp={false} />
+        <StatCard icon={Zap} label={t("activeConnections")} value={connections} trend="-" trendUp={false} />
+        <StatCard icon={Users} label={t("totalUsers")} value={users} trend="-" trendUp={false} />
+        <StatCard icon={ShieldAlert} label={t("securityAlerts")} value={alerts} trend="-" trendUp={false} />
       </div>
     </div>
   );

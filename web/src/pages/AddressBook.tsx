@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 
 interface AddressBookEntry {
@@ -12,9 +13,6 @@ interface AddressBookEntry {
   last_sync: string;
 }
 
-const categories = ["Personal", "Shared"];
-const teamGroups = ["Engineering", "Support", "Sales", "DevOps"];
-
 function initials(name: string) {
   return name
     .split(" ")
@@ -25,9 +23,13 @@ function initials(name: string) {
 }
 
 export default function AddressBookPage() {
+  const { t } = useTranslation("addressBook");
   const [entries, setEntries] = useState<AddressBookEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState("Personal");
+  const [selectedCategory, setSelectedCategory] = useState(t("personal"));
+
+  const categories = [t("personal"), t("shared")];
+  const teamGroups = [t("engineering"), t("support"), t("sales"), t("devops")];
 
   useEffect(() => {
     let mounted = true;
@@ -41,7 +43,7 @@ export default function AddressBookPage() {
   return (
     <div className="flex h-full">
       <aside className="w-56 bg-white border-r border-slate-200 p-4">
-        <div className="text-sm font-semibold text-slate-700 mb-3">Categories</div>
+        <div className="text-sm font-semibold text-slate-700 mb-3">{t("categories")}</div>
         <ul className="space-y-1 mb-4">
           {categories.map((c) => (
             <li key={c}>
@@ -58,7 +60,7 @@ export default function AddressBookPage() {
             </li>
           ))}
         </ul>
-        <div className="text-sm font-semibold text-slate-700 mb-3">Team Groups</div>
+        <div className="text-sm font-semibold text-slate-700 mb-3">{t("teamGroups")}</div>
         <ul className="space-y-1">
           {teamGroups.map((g) => (
             <li key={g}>
@@ -75,20 +77,20 @@ export default function AddressBookPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-slate-500" style={{ borderBottom: "1px solid #E2E8F0" }}>
-                <th className="px-4 py-3 font-medium">Name</th>
-                <th className="px-4 py-3 font-medium">Device ID</th>
-                <th className="px-4 py-3 font-medium">Alias</th>
-                <th className="px-4 py-3 font-medium">Group</th>
-                <th className="px-4 py-3 font-medium">Sync Status</th>
-                <th className="px-4 py-3 font-medium">Last Sync</th>
-                <th className="px-4 py-3 font-medium w-20">Actions</th>
+                <th className="px-4 py-3 font-medium">{t("name")}</th>
+                <th className="px-4 py-3 font-medium">{t("deviceId")}</th>
+                <th className="px-4 py-3 font-medium">{t("alias")}</th>
+                <th className="px-4 py-3 font-medium">{t("group")}</th>
+                <th className="px-4 py-3 font-medium">{t("syncStatus")}</th>
+                <th className="px-4 py-3 font-medium">{t("lastSync")}</th>
+                <th className="px-4 py-3 font-medium w-20">{t("actions")}</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">Loading...</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">{t("loading")}</td></tr>
               ) : entries.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">No entries found</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">{t("noEntries")}</td></tr>
               ) : (
                 entries.map((e) => (
                   <tr key={e.id} className="hover:bg-slate-50" style={{ borderBottom: "1px solid #E2E8F0" }}>

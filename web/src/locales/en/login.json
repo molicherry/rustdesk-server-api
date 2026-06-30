@@ -1,0 +1,8 @@
+{
+  "title": "RustDesk Admin",
+  "username": "Username",
+  "password": "Password",
+  "signIn": "Sign In",
+  "signingIn": "Signing in...",
+  "loginFailed": "Login failed"
+}

@@ -9,18 +9,20 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
-
-const navItems = [
-  { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/devices", icon: Monitor, label: "Devices" },
-  { to: "/address-book", icon: BookOpen, label: "Address Book" },
-  { to: "/logs", icon: History, label: "Logs" },
-  { to: "/settings", icon: Settings, label: "Settings" },
-];
+import { useTranslation } from "react-i18next";
 
 export default function Sidebar() {
+  const { t } = useTranslation("common");
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+
+  const navItems = [
+    { to: "/dashboard", icon: LayoutDashboard, label: t("dashboard") },
+    { to: "/devices", icon: Monitor, label: t("devices") },
+    { to: "/address-book", icon: BookOpen, label: t("addressBook") },
+    { to: "/logs", icon: History, label: t("logs") },
+    { to: "/settings", icon: Settings, label: t("settings") },
+  ];
 
   return (
     <aside
@@ -41,7 +43,7 @@ export default function Sidebar() {
         <button
           onClick={() => setCollapsed((c) => !c)}
           className="ml-auto text-slate-400 hover:text-white"
-          title={collapsed ? "Expand" : "Collapse"}
+          title={collapsed ? t("expand") : t("collapse")}
         >
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>

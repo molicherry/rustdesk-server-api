@@ -15,8 +15,9 @@ type LoginLog struct {
 	UUID      string         `gorm:"size:255" json:"uuid"`
 	IP        string         `gorm:"size:50" json:"ip"`
 	Type      string         `gorm:"size:50" json:"type"`
-	Platform  string         `gorm:"size:50" json:"platform"`
-	CreatedAt time.Time      `json:"created_at"`
+	Platform       string         `gorm:"size:50" json:"platform"`
+	OrganizationID uint           `gorm:"default:0" json:"organization_id"`
+	CreatedAt      time.Time      `json:"created_at"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }
 

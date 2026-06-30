@@ -1,0 +1,19 @@
+{
+  "categories": "Categories",
+  "personal": "Personal",
+  "shared": "Shared",
+  "teamGroups": "Team Groups",
+  "engineering": "Engineering",
+  "support": "Support",
+  "sales": "Sales",
+  "devops": "DevOps",
+  "name": "Name",
+  "deviceId": "Device ID",
+  "alias": "Alias",
+  "group": "Group",
+  "syncStatus": "Sync Status",
+  "lastSync": "Last Sync",
+  "actions": "Actions",
+  "loading": "Loading...",
+  "noEntries": "No entries found"
+}

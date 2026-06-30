@@ -187,7 +187,7 @@ func ABTags(c *gin.Context) {
 		return
 	}
 
-	tags, _, err := service.ListTags(userID, 1, 100)
+	tags, _, err := service.ListTags(userID, 0, 1, 100)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":   "server_error",

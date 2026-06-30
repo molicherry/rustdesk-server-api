@@ -15,6 +15,7 @@ type User struct {
 	Nickname      string         `gorm:"size:100" json:"nickname"`
 	Avatar        string         `gorm:"size:500" json:"avatar"`
 	IsAdmin       bool           `gorm:"default:false" json:"is_admin"`
+	Role          string         `gorm:"default:admin;size:50" json:"role"` // admin, user, auditor
 	Status        int            `gorm:"default:1" json:"status"` // 1=active, 0=disabled
 	TFASecret     string         `gorm:"size:100" json:"-"`
 	EmailVerified bool           `gorm:"default:false" json:"email_verified"`

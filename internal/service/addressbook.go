@@ -28,8 +28,17 @@ type AddressBookSyncPayload struct {
 }
 
 // ListAddressBooks returns paginated address book entries for a user.
-func ListAddressBooks(userID uint, page, pageSize int, search string) ([]model.AddressBook, int64, error) {
-	query := database.DB.Model(&model.AddressBook{}).Where("user_id = ?", userID)
+// When orgID > 0, filters to entries within that organization.
+// When orgID = 0, no organization filter (admin global view).
+func ListAddressBooks(userID uint, orgID uint, page, pageSize int, search string) ([]model.AddressBook, int64, error) {
+	query := database.DB.Model(&model.AddressBook{})
+
+	if userID > 0 {
+		query = query.Where("user_id = ?", userID)
+	}
+	if orgID > 0 {
+		query = query.Where("organization_id = ?", orgID)
+	}
 
 	if search != "" {
 		s := "%" + search + "%"
@@ -218,8 +227,17 @@ func tagsToJSONString(tags []string) string {
 // =============================================================================
 
 // ListTags returns paginated tags for a user.
-func ListTags(userID uint, page, pageSize int) ([]model.Tag, int64, error) {
-	query := database.DB.Model(&model.Tag{}).Where("user_id = ?", userID)
+// When orgID > 0, filters to tags within that organization.
+// When orgID = 0, no organization filter (admin global view).
+func ListTags(userID uint, orgID uint, page, pageSize int) ([]model.Tag, int64, error) {
+	query := database.DB.Model(&model.Tag{})
+
+	if userID > 0 {
+		query = query.Where("user_id = ?", userID)
+	}
+	if orgID > 0 {
+		query = query.Where("organization_id = ?", orgID)
+	}
 
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
@@ -289,9 +307,15 @@ func FindTagByID(id uint) (*model.Tag, error) {
 // =============================================================================
 
 // ListDeviceGroups returns all device groups.
-func ListDeviceGroups() ([]model.DeviceGroup, error) {
+// When orgID > 0, filters to groups within that organization.
+// When orgID = 0, returns all groups (admin global view).
+func ListDeviceGroups(orgID uint) ([]model.DeviceGroup, error) {
+	query := database.DB.Model(&model.DeviceGroup{})
+	if orgID > 0 {
+		query = query.Where("organization_id = ?", orgID)
+	}
 	var groups []model.DeviceGroup
-	if err := database.DB.Order("id ASC").Find(&groups).Error; err != nil {
+	if err := query.Order("id ASC").Find(&groups).Error; err != nil {
 		return nil, fmt.Errorf("list device_groups: %w", err)
 	}
 	return groups, nil

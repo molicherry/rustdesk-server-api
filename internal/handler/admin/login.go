@@ -19,8 +19,16 @@ type LoginRequest struct {
 
 // LoginResponse is the response body for a successful admin login.
 type LoginResponse struct {
-	Token string       `json:"token"`
-	User  UserResponse `json:"user"`
+	Token         string       `json:"token"`
+	User          UserResponse `json:"user"`
+	Organizations []OrgInfo    `json:"organizations"`
+}
+
+// OrgInfo is a lightweight organization summary returned in login/user responses.
+type OrgInfo struct {
+	ID   uint   `json:"id"`
+	Name string `json:"name"`
+	Role string `json:"role"`
 }
 
 // UserResponse is the public user representation returned in API responses.
@@ -28,6 +36,7 @@ type UserResponse struct {
 	ID       uint   `json:"id"`
 	Username string `json:"username"`
 	IsAdmin  bool   `json:"is_admin"`
+	Role     string `json:"role"`
 	Email    string `json:"email"`
 	Nickname string `json:"nickname"`
 	Status   int    `json:"status"`
@@ -39,6 +48,7 @@ func userResponse(u *model.User) UserResponse {
 		ID:       u.ID,
 		Username: u.Username,
 		IsAdmin:  u.IsAdmin,
+		Role:     u.Role,
 		Email:    u.Email,
 		Nickname: u.Nickname,
 		Status:   u.Status,
@@ -93,6 +103,24 @@ func AdminLogin(c *gin.Context) {
 	// Successful login — clear rate limiter for this IP.
 	middleware.LoginLimiter.Clear(ip)
 
+	// TOTP check: if the user has TFA enabled, require a TOTP code before issuing a token.
+	if user.TFASecret != "" {
+		sessionToken, err := service.CreateTfaSessionToken(user.ID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error":   "server_error",
+				"message": "Failed to create session token",
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"totp_required": true,
+			"session_token": sessionToken,
+		})
+		return
+	}
+
 	token, err := service.CreateToken(user.ID, "")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -112,9 +140,13 @@ func AdminLogin(c *gin.Context) {
 	}
 	database.DB.Create(loginLog)
 
+	// Build organizations list for the response
+	orgs := getOrgInfoList(user.ID)
+
 	c.JSON(http.StatusOK, LoginResponse{
-		Token: token.Token,
-		User:  userResponse(user),
+		Token:         token.Token,
+		User:          userResponse(user),
+		Organizations: orgs,
 	})
 }
 
@@ -135,6 +167,77 @@ func AdminLogout(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
+}
+
+// VerifyTotpRequest is the request body for TOTP login verification.
+type VerifyTotpRequest struct {
+	SessionToken string `json:"session_token" binding:"required"`
+	Code         string `json:"code" binding:"required"`
+}
+
+// VerifyTotpLogin handles POST /api/admin/login/verify-totp
+// Validates the session token and TOTP code, then issues a real API token.
+func VerifyTotpLogin(c *gin.Context) {
+	ip := c.ClientIP()
+
+	var req VerifyTotpRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "bad_request",
+			"message": "session_token and code are required",
+		})
+		return
+	}
+
+	// Validate the session token (TFA session tokens only)
+	user, err := service.ValidateTfaSessionToken(req.SessionToken)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error":   "unauthorized",
+			"message": "Invalid or expired session token",
+		})
+		return
+	}
+
+	// Validate the TOTP code
+	if !service.ValidateTOTPCode(user.TFASecret, req.Code) {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error":   "invalid_totp_code",
+			"message": "Invalid TOTP code",
+		})
+		return
+	}
+
+	// TOTP verified — delete the session token and create a real API token
+	service.DeleteTfaSessionToken(req.SessionToken)
+
+	token, err := service.CreateToken(user.ID, "")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "server_error",
+			"message": "Failed to create token",
+		})
+		return
+	}
+
+	// Record login log with TOTP type
+	loginLog := &model.LoginLog{
+		UserID:   user.ID,
+		Client:   c.Request.UserAgent(),
+		IP:       ip,
+		Type:     "totp",
+		Platform: "web",
+	}
+	database.DB.Create(loginLog)
+
+	// Build organizations list for the response
+	orgs := getOrgInfoList(user.ID)
+
+	c.JSON(http.StatusOK, LoginResponse{
+		Token:         token.Token,
+		User:          userResponse(user),
+		Organizations: orgs,
+	})
 }
 
 // Captcha handles GET /api/admin/captcha
@@ -169,7 +272,12 @@ func GetCurrentUser(c *gin.Context) {
 	}
 
 	u := user.(*model.User)
-	c.JSON(http.StatusOK, userResponse(u))
+	orgs := getOrgInfoList(u.ID)
+
+	c.JSON(http.StatusOK, gin.H{
+		"user":          userResponse(u),
+		"organizations": orgs,
+	})
 }
 
 // ChangeCurrentPasswordRequest is the request body for changing password.
@@ -247,4 +355,26 @@ func ConfigServer(c *gin.Context) {
 		"relay_server": "",
 		"api_server":   "",
 	})
+}
+
+// getOrgInfoList builds the list of organizations a user belongs to.
+func getOrgInfoList(userID uint) []OrgInfo {
+	memberships, err := service.ListUserOrganizations(userID)
+	if err != nil || len(memberships) == 0 {
+		return []OrgInfo{}
+	}
+
+	orgs := make([]OrgInfo, 0, len(memberships))
+	for _, m := range memberships {
+		org, err := service.FindOrganizationByID(m.OrganizationID)
+		if err != nil {
+			continue
+		}
+		orgs = append(orgs, OrgInfo{
+			ID:   org.ID,
+			Name: org.Name,
+			Role: m.Role,
+		})
+	}
+	return orgs
 }

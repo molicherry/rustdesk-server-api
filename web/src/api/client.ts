@@ -1,3 +1,5 @@
+import i18n from '../i18n'
+
 const baseURL = import.meta.env.VITE_API_URL ?? "";
 
 export class ApiError extends Error {
@@ -6,6 +8,12 @@ export class ApiError extends Error {
     super(message);
     this.status = status;
   }
+}
+
+function translateError(errorCode: string, fallbackMessage: string): string {
+  const key = `errors:${errorCode}`;
+  const translated = i18n.t(key);
+  return translated !== key ? translated : i18n.t('errors:unknown', fallbackMessage);
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -27,12 +35,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     localStorage.removeItem("api-token");
     localStorage.removeItem("user");
     window.location.href = "/login";
-    throw new ApiError("Unauthorized", 401);
+    throw new ApiError(translateError("unauthorized", "Unauthorized"), 401);
   }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new ApiError(body.message || body.error || `${res.status} ${res.statusText}`, res.status);
+    const errorCode = body.error || "";
+    const fallback = body.message || `${res.status} ${res.statusText}`;
+    throw new ApiError(translateError(errorCode, fallback), res.status);
   }
 
   return res.json() as Promise<T>;

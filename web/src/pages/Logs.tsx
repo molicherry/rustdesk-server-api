@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Download } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api } from "../api/client";
 
 interface AuditConn {
@@ -31,6 +32,7 @@ function formatBytes(b: number) {
 }
 
 export default function LogsPage() {
+  const { t } = useTranslation("logs");
   const [tab, setTab] = useState<"sessions" | "files">("sessions");
   const [connLogs, setConnLogs] = useState<AuditConn[]>([]);
   const [fileLogs, setFileLogs] = useState<AuditFile[]>([]);
@@ -63,14 +65,14 @@ export default function LogsPage() {
   const exportCSV = () => {
     const data = tab === "sessions" ? connLogs : fileLogs;
     const headers = tab === "sessions"
-      ? ["ID", "Conn ID", "Peer ID", "Hostname", "Platform", "User", "Action", "IP", "Created"]
-      : ["ID", "Conn ID", "Peer ID", "Path", "Direction", "Size", "Created"];
-    const rows = data.map((d: any) =>
+      ? [t("connId"), t("peer"), t("platform"), t("user"), t("action"), t("ip"), t("created")]
+      : [t("connId"), t("peer"), t("path"), t("direction"), t("size"), t("created")];
+    const rows = data.map((d: AuditConn | AuditFile) =>
       tab === "sessions"
-        ? [d.id, d.conn_id, d.peer_id, d.peer_hostname, d.peer_platform, d.peer_user, d.action, d.ip, d.created_at]
-        : [d.id, d.conn_id, d.peer_id, d.path, d.direction, d.size, d.created_at]
+        ? [(d as AuditConn).conn_id, (d as AuditConn).peer_hostname, (d as AuditConn).peer_platform, (d as AuditConn).peer_user, (d as AuditConn).action, (d as AuditConn).ip, (d as AuditConn).created_at]
+        : [(d as AuditFile).conn_id, (d as AuditFile).peer_id, (d as AuditFile).path, (d as AuditFile).direction, String((d as AuditFile).size), (d as AuditFile).created_at]
     );
-    const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, "\"\"")}"`).join(",")).join("\n");
+    const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -90,7 +92,7 @@ export default function LogsPage() {
               tab === "sessions" ? "bg-slate-100 text-slate-900 font-medium" : "text-slate-600 hover:bg-slate-50"
             }`}
           >
-            Remote Sessions
+            {t("remoteSessions")}
           </button>
           <button
             onClick={() => setTab("files")}
@@ -98,7 +100,7 @@ export default function LogsPage() {
               tab === "files" ? "bg-slate-100 text-slate-900 font-medium" : "text-slate-600 hover:bg-slate-50"
             }`}
           >
-            File Transfers
+            {t("fileTransfers")}
           </button>
         </div>
 
@@ -111,7 +113,7 @@ export default function LogsPage() {
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
             />
-            <span className="text-sm text-slate-400">to</span>
+            <span className="text-sm text-slate-400">{t("to")}</span>
             <input
               type="date"
               className="text-sm border rounded-md px-2 py-1.5"
@@ -126,7 +128,7 @@ export default function LogsPage() {
             style={{ borderColor: "#E2E8F0" }}
           >
             <Download size={14} />
-            Export CSV
+            {t("exportCSV")}
           </button>
         </div>
       </div>
@@ -136,20 +138,20 @@ export default function LogsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-slate-500" style={{ borderBottom: "1px solid #E2E8F0" }}>
-                <th className="px-4 py-3 font-medium">Conn ID</th>
-                <th className="px-4 py-3 font-medium">Peer</th>
-                <th className="px-4 py-3 font-medium">Platform</th>
-                <th className="px-4 py-3 font-medium">User</th>
-                <th className="px-4 py-3 font-medium">Action</th>
-                <th className="px-4 py-3 font-medium">IP</th>
-                <th className="px-4 py-3 font-medium">Created</th>
+                <th className="px-4 py-3 font-medium">{t("connId")}</th>
+                <th className="px-4 py-3 font-medium">{t("peer")}</th>
+                <th className="px-4 py-3 font-medium">{t("platform")}</th>
+                <th className="px-4 py-3 font-medium">{t("user")}</th>
+                <th className="px-4 py-3 font-medium">{t("action")}</th>
+                <th className="px-4 py-3 font-medium">{t("ip")}</th>
+                <th className="px-4 py-3 font-medium">{t("created")}</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">Loading...</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">{t("loading")}</td></tr>
               ) : connLogs.length === 0 ? (
-                <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">No session logs</td></tr>
+                <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-400">{t("noSessionLogs")}</td></tr>
               ) : (
                 connLogs.map((l) => (
                   <tr key={l.id} className="hover:bg-slate-50" style={{ borderBottom: "1px solid #E2E8F0" }}>
@@ -176,19 +178,19 @@ export default function LogsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-slate-500" style={{ borderBottom: "1px solid #E2E8F0" }}>
-                <th className="px-4 py-3 font-medium">Conn ID</th>
-                <th className="px-4 py-3 font-medium">Peer ID</th>
-                <th className="px-4 py-3 font-medium">Path</th>
-                <th className="px-4 py-3 font-medium">Direction</th>
-                <th className="px-4 py-3 font-medium">Size</th>
-                <th className="px-4 py-3 font-medium">Created</th>
+                <th className="px-4 py-3 font-medium">{t("connId")}</th>
+                <th className="px-4 py-3 font-medium">{t("peer")}</th>
+                <th className="px-4 py-3 font-medium">{t("path")}</th>
+                <th className="px-4 py-3 font-medium">{t("direction")}</th>
+                <th className="px-4 py-3 font-medium">{t("size")}</th>
+                <th className="px-4 py-3 font-medium">{t("created")}</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">Loading...</td></tr>
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">{t("loading")}</td></tr>
               ) : fileLogs.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">No file transfer logs</td></tr>
+                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">{t("noFileTransferLogs")}</td></tr>
               ) : (
                 fileLogs.map((l) => (
                   <tr key={l.id} className="hover:bg-slate-50" style={{ borderBottom: "1px solid #E2E8F0" }}>

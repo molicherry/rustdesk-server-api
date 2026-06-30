@@ -161,6 +161,42 @@ func FindPeerByPeerIDAndUUID(peerID, uuid string) (*model.Peer, error) {
 	return &peer, nil
 }
 
+// ListPeers returns a filtered, paginated list of peers.
+// When orgID > 0, filters to peers within that organization.
+// When orgID = 0, returns all peers (admin global view).
+func ListPeers(orgID uint, page, pageSize int, status, osName, search string) ([]model.Peer, int64, error) {
+	query := database.DB.Model(&model.Peer{})
+
+	if orgID > 0 {
+		query = query.Where("organization_id = ?", orgID)
+	}
+
+	switch status {
+	case "online":
+		query = query.Where("is_online = ?", true)
+	case "offline":
+		query = query.Where("is_online = ?", false)
+	}
+
+	if osName != "" {
+		query = query.Where("os = ?", osName)
+	}
+
+	if search != "" {
+		s := "%" + search + "%"
+		query = query.Where("peer_id LIKE ? OR hostname LIKE ? OR alias LIKE ?", s, s, s)
+	}
+
+	var total int64
+	query.Count(&total)
+
+	var peers []model.Peer
+	offset := (page - 1) * pageSize
+	query.Order("last_online_time DESC").Offset(offset).Limit(pageSize).Find(&peers)
+
+	return peers, total, nil
+}
+
 // DeletePeersByIDs batch-deletes peers by their primary key IDs.
 func DeletePeersByIDs(ids []uint) error {
 	if len(ids) == 0 {
