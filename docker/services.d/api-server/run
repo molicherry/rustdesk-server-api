@@ -1,0 +1,4 @@
+#!/usr/bin/with-contenv sh
+exec 2>&1
+echo "[api-server] Starting..."
+exec api-server serve
