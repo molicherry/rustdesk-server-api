@@ -123,7 +123,7 @@ func VerifyTfa(c *gin.Context) {
 	}
 
 	// Clean up the setup token
-	service.DeleteTfaSetupToken(u.ID)
+	_ = service.DeleteTfaSetupToken(u.ID)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "TFA enabled successfully",

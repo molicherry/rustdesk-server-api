@@ -1,0 +1,8 @@
+linters-settings:
+  errcheck:
+    exclude-functions:
+      - (*os.File).Close
+      - (net.Conn).Close
+      - (*github.com/gorilla/websocket.Conn).Close
+      - (*github.com/gorilla/websocket.Conn).SetReadDeadline
+      - (*github.com/gorilla/websocket.Conn).SetWriteDeadline

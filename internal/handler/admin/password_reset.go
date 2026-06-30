@@ -117,7 +117,7 @@ func ResetPassword(c *gin.Context) {
 	}
 
 	// Invalidate all existing tokens for this user
-	service.DeleteUserTokens(user.ID)
+	_ = service.DeleteUserTokens(user.ID)
 
 	// Clean up reset records
 	service.ConsumePasswordReset(req.Email)

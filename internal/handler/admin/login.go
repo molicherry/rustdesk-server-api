@@ -209,7 +209,7 @@ func VerifyTotpLogin(c *gin.Context) {
 	}
 
 	// TOTP verified — delete the session token and create a real API token
-	service.DeleteTfaSessionToken(req.SessionToken)
+	_ = service.DeleteTfaSessionToken(req.SessionToken)
 
 	token, err := service.CreateToken(user.ID, "")
 	if err != nil {
@@ -342,7 +342,7 @@ func ChangeCurrentPassword(c *gin.Context) {
 	if t, ok := token.(*model.UserToken); ok {
 		database.DB.Where("user_id = ? AND id != ?", u.ID, t.ID).Delete(&model.UserToken{})
 	} else {
-		service.DeleteUserTokens(u.ID)
+		_ = service.DeleteUserTokens(u.ID)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Password changed successfully"})
