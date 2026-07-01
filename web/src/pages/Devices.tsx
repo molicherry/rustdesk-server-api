@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Search, MoreHorizontal, Filter } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { api } from "../api/client";
+import { api, type ListResponse } from "../api/client";
 
 interface Peer {
   id: string;
@@ -32,8 +32,8 @@ export default function DevicesPage() {
 
   useEffect(() => {
     let mounted = true;
-    api.get<Peer[]>("/api/admin/peer/list")
-      .then((data) => { if (mounted) setPeers(data); })
+    api.get<ListResponse<Peer>>("/api/admin/peer/list")
+      .then((res) => { if (mounted) setPeers(res.data); })
       .catch(() => {})
       .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };

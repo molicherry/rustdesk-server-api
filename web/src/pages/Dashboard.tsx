@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Monitor, Users, Zap, ShieldAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { api } from "../api/client";
+import { api, type ListResponse } from "../api/client";
 
 interface StatCardProps {
   icon: React.ElementType;
@@ -40,9 +40,9 @@ export default function DashboardPage() {
     let mounted = true;
     async function load() {
       try {
-        const peers: unknown[] = await api.get("/api/admin/peer/list");
+        const res: ListResponse<unknown> = await api.get("/api/admin/peer/list");
         if (!mounted) return;
-        setOnlineDevices((peers as unknown[]).length);
+        setOnlineDevices(res.total);
         setConnections(0);
         setUsers(0);
         setAlerts(0);

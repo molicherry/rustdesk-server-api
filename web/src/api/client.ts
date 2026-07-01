@@ -2,6 +2,8 @@ import i18n from '../i18n'
 
 const baseURL = import.meta.env.VITE_API_URL ?? "";
 
+export interface ListResponse<T> { total: number; data: T[] }
+
 export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {

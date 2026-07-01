@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Download } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { api } from "../api/client";
+import { api, type ListResponse } from "../api/client";
 
 interface AuditConn {
   id: string;
@@ -39,8 +39,6 @@ export default function LogsPage() {
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-
-  interface ListResponse<T> { total: number; data: T[] }
 
   useEffect(() => {
     let mounted = true;

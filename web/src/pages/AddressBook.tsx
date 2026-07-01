@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { api } from "../api/client";
+import { api, type ListResponse } from "../api/client";
 
 interface AddressBookEntry {
   id: string;
@@ -33,8 +33,8 @@ export default function AddressBookPage() {
 
   useEffect(() => {
     let mounted = true;
-    api.get<AddressBookEntry[]>("/api/admin/address_book/list")
-      .then((data) => { if (mounted) setEntries(data); })
+    api.get<ListResponse<AddressBookEntry>>("/api/admin/address_book/list")
+      .then((res) => { if (mounted) setEntries(res.data); })
       .catch(() => {})
       .finally(() => { if (mounted) setLoading(false); });
     return () => { mounted = false; };
