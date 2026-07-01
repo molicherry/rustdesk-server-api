@@ -40,17 +40,19 @@ export default function LogsPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
+  interface ListResponse<T> { total: number; data: T[] }
+
   useEffect(() => {
     let mounted = true;
     async function load() {
       try {
         const [c, f] = await Promise.all([
-          api.get<AuditConn[]>("/api/admin/audit_conn/list"),
-          api.get<AuditFile[]>("/api/admin/audit_file/list"),
+          api.get<ListResponse<AuditConn>>("/api/admin/audit_conn/list"),
+          api.get<ListResponse<AuditFile>>("/api/admin/audit_file/list"),
         ]);
         if (mounted) {
-          setConnLogs(c);
-          setFileLogs(f);
+          setConnLogs(c.data);
+          setFileLogs(f.data);
         }
       } catch {
         // ignore
