@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (t) {
       await fetch(`${baseURL}/api/admin/logout`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${t}` },
+        headers: { "api-token": t },
       }).catch(() => {});
     }
     setToken(null);
